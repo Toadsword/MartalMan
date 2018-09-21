@@ -13,13 +13,16 @@ public class PlayerControllerNetwork : NetworkBehaviour
     [SerializeField] Vector2 groundSize = new Vector2(1.0f, 0.1f);
     [SerializeField] LayerMask groundLayer;
 
+    [SerializeField] float invincibilityTime = 0.1f;
+    float timerInvincibility;
+
     [Header("Propellant")]
     [SerializeField] GameObject propellingObj;
     [SerializeField] float force = 9000.0f;
     [SerializeField] AnimationCurve hammerCurve;
     [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
-    [SyncVar] float propelTimer;
+    float propelTimer;
 
     enum HammerSteps
     {
@@ -32,23 +35,32 @@ public class PlayerControllerNetwork : NetworkBehaviour
 
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
-    float lastHoriDirection;
+    float horizontal, lastHoriDirection;
+    bool jump, isHit;
+    Color baseColor;
     [SyncVar] Vector2 slamDirection, hammerDirection;
 
     // Use this for initialization
     void Start ()
     {
         propelTimer = 0.0f;
+        timerInvincibility = 0.0f;
+
+        baseColor = Color.white;
+
         lastHoriDirection = 1.0f;
         hammerState = HammerSteps.IDLE;
-       
+        jump = false;
+        isHit = false;
+        
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
     }
 
     public override void OnStartLocalPlayer()
     {
-        GetComponent<SpriteRenderer>().color = Color.blue;
+        baseColor = Color.blue;
+        GetComponent<SpriteRenderer>().color = baseColor;
     }
 
     // Update is called once per frame
@@ -57,7 +69,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
             return;
 
         //Acceleration
-        float horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
+        horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
 
         if (!Mathf.Approximately(horizontal, 0.0f))
             lastHoriDirection = horizontal;
@@ -70,9 +82,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
         bool grounded = Physics2D.OverlapBox(feet.position, groundSize, 0, groundLayer);
         if (GameInput.GetInputDown(GameInput.InputType.JUMP) && grounded)
         {
-            grounded = false;
-            ApplyJumpForce(jumpHeight);
-            CmdApplyJumpForce(jumpHeight);
+            jump = true;
         }
 
         //Hammer
@@ -102,6 +112,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
             }
         }
     }
+
     private void FixedUpdate()
     {
         // Cap speed
@@ -110,7 +121,17 @@ public class PlayerControllerNetwork : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
             CmdApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
+
+        if(jump)
+        {
+            Debug.LogWarning(hasAuthority);
+            if (!hasAuthority)
+                ApplyJumpForce(jumpHeight);
+            CmdApplyJumpForce(jumpHeight);
+            jump = false;
+        }
         HammerSlam();
+        InvicibilityAnimation();
     }
     
     private void HammerSlam()
@@ -180,11 +201,15 @@ public class PlayerControllerNetwork : NetworkBehaviour
         Vector2 force = desiredValue - actualValue;
         rigid.AddForce(force / divider);
     }
-
+    
     public void GetHit(Vector2 direction, float force)
     {
-        ApplyForceDirection(direction, force);
-        CmdApplyForceDirection(direction, force);
+        if(Utility.IsOver(timerInvincibility))
+        {
+            timerInvincibility = Utility.StartTimer(invincibilityTime);
+            ApplyForceDirection(direction, force);
+            CmdApplyForceDirection(direction, force);
+        }
     }
 
     private void ApplyJumpForce(float height)
@@ -219,5 +244,20 @@ public class PlayerControllerNetwork : NetworkBehaviour
     private void CmdApplyForceDirection(Vector2 direction, float force)
     {
         rigid.AddForce(direction * force);
+    }
+
+    private void InvicibilityAnimation()
+    {
+        if(!Utility.IsOver(timerInvincibility))
+        {
+            if (sprite.color == baseColor)
+                sprite.color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+            else
+                sprite.color = baseColor;
+        }
+        else
+        {
+            sprite.color = baseColor;
+        }
     }
 }
