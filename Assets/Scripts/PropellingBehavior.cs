@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider2D))]
-public class PropellingBehavior : MonoBehaviour {
-
+public class PropellingBehavior : MonoBehaviour
+{
     private List<GameObject> touchingPlayers;
 
     private void Start()
