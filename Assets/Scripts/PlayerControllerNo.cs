@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerControllerNo : MonoBehaviour {
 
     [Header("Player")]
     [SerializeField] float speed = 5.0f;
@@ -142,7 +142,7 @@ public class PlayerController : MonoBehaviour {
                     foreach(GameObject player in players)
                     {
                         if(player != this)
-                            player.GetComponent<PlayerController>().rigid.AddForce(direction * force);
+                            player.GetComponent<PlayerControllerNo>().rigid.AddForce(direction * force);
                     }
                     //propellingObj.SetActive(false);
                     propelTimer = Utility.StartTimer(timeBeforePropelling);

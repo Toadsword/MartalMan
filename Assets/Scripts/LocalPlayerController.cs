@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class PlayerControllerNetwork : NetworkBehaviour
+public class LocalPlayerController : NetworkBehaviour
 {
     [Header("Player")]
     [SerializeField] float speed = 9.0f;
@@ -22,7 +22,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
     [SerializeField] AnimationCurve hammerCurve;
     [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
-    float propelTimer;
+    [SyncVar] float propelTimer;
 
     enum HammerSteps
     {
@@ -37,16 +37,15 @@ public class PlayerControllerNetwork : NetworkBehaviour
     SpriteRenderer sprite;
     float horizontal, lastHoriDirection;
     bool jump, isHit;
-    Color baseColor;
-    [SyncVar] Vector2 slamDirection, hammerDirection;
+    Color baseColor = Color.white;
+    Vector2 slamDirection;
+    [SyncVar] Vector2 hammerDirection;
 
     // Use this for initialization
     void Start ()
     {
         propelTimer = 0.0f;
         timerInvincibility = 0.0f;
-
-        baseColor = Color.white;
 
         lastHoriDirection = 1.0f;
         hammerState = HammerSteps.IDLE;
@@ -61,6 +60,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
     {
         baseColor = Color.blue;
         GetComponent<SpriteRenderer>().color = baseColor;
+        Camera.main.GetComponent<CameraBehavior>().player = gameObject;
     }
 
     // Update is called once per frame
@@ -73,10 +73,6 @@ public class PlayerControllerNetwork : NetworkBehaviour
 
         if (!Mathf.Approximately(horizontal, 0.0f))
             lastHoriDirection = horizontal;
-
-        Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
-        ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
-        CmdApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
 
         //In air
         bool grounded = Physics2D.OverlapBox(feet.position, groundSize, 0, groundLayer);
@@ -106,32 +102,43 @@ public class PlayerControllerNetwork : NetworkBehaviour
 
             if(hammerState == HammerSteps.IDLE)
             {
-                hammerDirection = slamDirection;
-                propelTimer = Utility.StartTimer(timeBeforePropelling);
-                hammerState = HammerSteps.GOING;
+                CmdStartHammering();
             }
+        }
+
+        //Tests
+        if(Input.GetKeyDown(KeyCode.H))
+        {
+            NetworkCommands._instance.PropellPlayers(this);
         }
     }
 
     private void FixedUpdate()
     {
+        Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
+        ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
+
         // Cap speed
         if (rigid.velocity.x > speed || rigid.velocity.x < -speed)
         {
-            ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
-            CmdApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
+            //ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
 
         if(jump)
         {
-            Debug.LogWarning(hasAuthority);
-            if (!hasAuthority)
-                ApplyJumpForce(jumpHeight);
-            CmdApplyJumpForce(jumpHeight);
+            ApplyJumpForce(jumpHeight);
             jump = false;
         }
         HammerSlam();
         InvicibilityAnimation();
+    }
+
+    [Command]
+    private void CmdStartHammering()
+    {
+        hammerDirection = slamDirection;
+        propelTimer = Utility.StartTimer(timeBeforePropelling);
+        hammerState = HammerSteps.GOING;
     }
     
     private void HammerSlam()
@@ -168,7 +175,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
                 foreach (GameObject player in players)
                 {
                     // TODO : A CHANGER POUR UNE FONCTION PLUS CORRECT
-                    player.GetComponent<PlayerControllerNetwork>().GetHit(direction, force);
+                    player.GetComponent<LocalPlayerController>().GetHit(direction, force);
                 }
                 propelTimer = Utility.StartTimer(timeBeforePropelling);
                 break;
@@ -192,14 +199,8 @@ public class PlayerControllerNetwork : NetworkBehaviour
     private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
     {
         Vector2 force = desiredValue - actualValue;
-        rigid.AddForce(force / divider);
-    }
-
-    [Command]
-    private void CmdApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
-    {
-        Vector2 force = desiredValue - actualValue;
-        rigid.AddForce(force / divider);
+        //if (isServer)
+            ApplyForce(force / divider);
     }
     
     public void GetHit(Vector2 direction, float force)
@@ -207,8 +208,8 @@ public class PlayerControllerNetwork : NetworkBehaviour
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-            ApplyForceDirection(direction, force);
-            CmdApplyForceDirection(direction, force);
+            if (isServer)
+                ApplyForce(direction * force);
         }
     }
 
@@ -220,30 +221,14 @@ public class PlayerControllerNetwork : NetworkBehaviour
         if (height < 0.0f)
             direction = Vector2.down;
 
-        rigid.AddForce(direction * rigid.mass * 50 * jumpForce);
+        if(isServer)
+            ApplyForce(direction * rigid.mass * 50 * jumpForce);
     } 
 
-    [Command]
-    private void CmdApplyJumpForce(float height)
+    //[Command]
+    private void ApplyForce(Vector2 force)
     {
-        float jumpForce = Mathf.Sqrt(Mathf.Abs(2.0f * Physics2D.gravity.y * height));
-
-        Vector2 direction = Vector2.up;
-        if (height < 0.0f)
-            direction = Vector2.down;
-
-        rigid.AddForce(direction * rigid.mass * 50 * jumpForce);
-    }
-
-    private void ApplyForceDirection(Vector2 direction, float force)
-    {
-        rigid.AddForce(direction * force);
-    }
-
-    [Command]
-    private void CmdApplyForceDirection(Vector2 direction, float force)
-    {
-        rigid.AddForce(direction * force);
+        rigid.AddForce(force);
     }
 
     private void InvicibilityAnimation()
