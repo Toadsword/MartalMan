@@ -22,7 +22,7 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] AnimationCurve hammerCurve;
     [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
-    [SyncVar] float propelTimer;
+    float propelTimer;
 
     enum HammerSteps
     {
@@ -31,7 +31,14 @@ public class LocalPlayerController : NetworkBehaviour
         RETURNING,
         IDLE
     }
-    [SyncVar] HammerSteps hammerState;
+    HammerSteps hammerState;
+
+    enum NetworkUpdtMethod
+    {
+        SYNC_POS,
+        SYNC_VEL,
+        SYNC_BOTH
+    }
 
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
@@ -105,38 +112,53 @@ public class LocalPlayerController : NetworkBehaviour
                 CmdStartHammering();
             }
         }
-
         //Tests
-        if(Input.GetKeyDown(KeyCode.H))
+        if (Input.GetKeyDown(KeyCode.H))
         {
-            NetworkCommands._instance.PropellPlayers(this);
+            if (Mathf.Approximately(rigid.velocity.x, 0.0f) &&
+                Mathf.Approximately(rigid.velocity.y, 0.0f) &&
+                (Mathf.Approximately(horizontal, 0.0f) ||
+                !jump))
+                UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         }
     }
 
     private void FixedUpdate()
     {
+        HammerSlam();
+        InvicibilityAnimation();
+
+        if (!isLocalPlayer)
+            return;
+
         Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
         ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
 
         // Cap speed
         if (rigid.velocity.x > speed || rigid.velocity.x < -speed)
         {
-            //ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
+            ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
 
-        if(jump)
+        if (jump)
         {
             ApplyJumpForce(jumpHeight);
             jump = false;
         }
-        HammerSlam();
-        InvicibilityAnimation();
     }
 
     [Command]
     private void CmdStartHammering()
     {
         hammerDirection = slamDirection;
+        propelTimer = Utility.StartTimer(timeBeforePropelling);
+        hammerState = HammerSteps.GOING;
+        RpcStartHammering();
+    }
+
+    [ClientRpc]
+    private void RpcStartHammering()
+    {
         propelTimer = Utility.StartTimer(timeBeforePropelling);
         hammerState = HammerSteps.GOING;
     }
@@ -174,8 +196,7 @@ public class LocalPlayerController : NetworkBehaviour
 
                 foreach (GameObject player in players)
                 {
-                    // TODO : A CHANGER POUR UNE FONCTION PLUS CORRECT
-                    player.GetComponent<LocalPlayerController>().GetHit(direction, force);
+                    player.GetComponent<LocalPlayerController>().RpcGetHit(direction, force);
                 }
                 propelTimer = Utility.StartTimer(timeBeforePropelling);
                 break;
@@ -195,21 +216,23 @@ public class LocalPlayerController : NetworkBehaviour
                 break;
         }
     }
-
+    
     private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
     {
         Vector2 force = desiredValue - actualValue;
-        //if (isServer)
-            ApplyForce(force / divider);
+        CmdApplyForce(force / divider);
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
     }
-    
-    public void GetHit(Vector2 direction, float force)
+
+    [ClientRpc]
+    public void RpcGetHit(Vector2 direction, float force)
     {
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-            if (isServer)
-                ApplyForce(direction * force);
+            CmdApplyForce(direction * force);
+            //Update pos + vitesse
+            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         }
     }
 
@@ -220,15 +243,59 @@ public class LocalPlayerController : NetworkBehaviour
         Vector2 direction = Vector2.up;
         if (height < 0.0f)
             direction = Vector2.down;
-
-        if(isServer)
-            ApplyForce(direction * rigid.mass * 50 * jumpForce);
+        
+        CmdApplyForce(direction * rigid.mass * 50 * jumpForce);
+        //Update pos + vitesse
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
     } 
 
-    //[Command]
-    private void ApplyForce(Vector2 force)
+    [Command]
+    private void CmdApplyForce(Vector2 force)
     {
         rigid.AddForce(force);
+        if (isServer)
+            RpcApplyForce(force);
+    }
+
+    [ClientRpc]
+    private void RpcApplyForce(Vector2 force)
+    {
+        if(!isServer)
+            rigid.AddForce(force);
+    }
+
+    private void UpdatePlayerNetwork(NetworkUpdtMethod method)
+    {
+        if(method == NetworkUpdtMethod.SYNC_BOTH)
+        {
+            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_POS, transform.position);
+            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_VEL, rigid.velocity);
+        }
+        else
+        {
+            if(method == NetworkUpdtMethod.SYNC_POS)
+                CmdUpdatePlayer(method, transform.position);
+            else
+                CmdUpdatePlayer(method, rigid.velocity);
+        }
+    }
+
+    [Command]
+    private void CmdUpdatePlayer(NetworkUpdtMethod method, Vector2 value)
+    {
+        if (isServer)
+            RpcUpdatePlayer(method, value);
+    }
+    [ClientRpc]
+    private void RpcUpdatePlayer(NetworkUpdtMethod method, Vector2 value)
+    {
+        if (!isLocalPlayer)
+        {
+            if (method == NetworkUpdtMethod.SYNC_POS)
+                transform.position = value;
+            else if(method == NetworkUpdtMethod.SYNC_VEL)
+                rigid.velocity = value;
+        }
     }
 
     private void InvicibilityAnimation()

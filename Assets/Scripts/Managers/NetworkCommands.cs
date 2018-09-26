@@ -14,7 +14,7 @@ public class NetworkCommands : NetworkBehaviour {
         else
             Destroy(gameObject);
     }
-
+    /*
     public void PropellPlayers(LocalPlayerController[] players)
     {
         foreach (LocalPlayerController player in players)
@@ -27,4 +27,5 @@ public class NetworkCommands : NetworkBehaviour {
     {
         player.GetHit(new Vector2(1.0f, 1.0f), 600);
     }
+    */
 }
