@@ -11,21 +11,6 @@ Prefab:
   m_SourcePrefab: {fileID: 0}
   m_RootGameObject: {fileID: 1178452262387260}
   m_IsPrefabAsset: 1
---- !u!1 &1096393583541694
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4952769422131018}
-  m_Layer: 0
-  m_Name: feet
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!1 &1178452262387260
 GameObject:
   m_ObjectHideFlags: 0
@@ -86,26 +71,12 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1178452262387260}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -5.710808, y: 1.6625328, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4050032755906412}
-  - {fileID: 4952769422131018}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &4952769422131018
-Transform:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1096393583541694}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.6, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 4271976269801638}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &50955715854245358
 Rigidbody2D:
@@ -255,12 +226,12 @@ MonoBehaviour:
   speed: 9
   speedAcc: 2
   jumpHeight: 5
-  feet: {fileID: 4952769422131018}
-  groundSize: {x: 1, y: 0.1}
+  feetPosition: {x: 0, y: -0.6}
+  groundSize: {x: 0.9, y: 0.1}
   groundLayer:
     serializedVersion: 2
     m_Bits: 256
-  invincibilityTime: 0.1
+  invincibilityTime: 0.7
   propellingObj: {fileID: 1423442908815458}
   force: 3500
   hammerCurve:

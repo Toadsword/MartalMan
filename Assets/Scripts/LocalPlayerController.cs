@@ -9,8 +9,8 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] float speed = 9.0f;
     [SerializeField] float speedAcc = 2.0f;
     [SerializeField] float jumpHeight = 5.0f;
-    [SerializeField] Transform feet;
-    [SerializeField] Vector2 groundSize = new Vector2(1.0f, 0.1f);
+    [SerializeField] Vector2 feetPosition = new Vector2(0.0f, -0.6f);
+    [SerializeField] Vector2 groundSize = new Vector2(0.9f, 0.1f);
     [SerializeField] LayerMask groundLayer;
 
     [SerializeField] float invincibilityTime = 0.1f;
@@ -44,6 +44,7 @@ public class LocalPlayerController : NetworkBehaviour
     SpriteRenderer sprite;
     float horizontal, lastHoriDirection;
     bool jump, isHit;
+    bool grounded;
     Color baseColor = Color.white;
     Vector2 slamDirection;
     [SyncVar] Vector2 hammerDirection;
@@ -70,7 +71,7 @@ public class LocalPlayerController : NetworkBehaviour
         Camera.main.GetComponent<CameraBehavior>().player = gameObject;
     }
 
-    // Update is called once per frame
+    // Update is called once per frame // USED FOR INPUTS
     void Update () {
         if (!isLocalPlayer)
             return;
@@ -82,7 +83,6 @@ public class LocalPlayerController : NetworkBehaviour
             lastHoriDirection = horizontal;
 
         //In air
-        bool grounded = Physics2D.OverlapBox(feet.position, groundSize, 0, groundLayer);
         if (GameInput.GetInputDown(GameInput.InputType.JUMP) && grounded)
         {
             jump = true;
@@ -125,6 +125,8 @@ public class LocalPlayerController : NetworkBehaviour
 
     private void FixedUpdate()
     {
+        grounded = Physics2D.OverlapBox(rigid.position + feetPosition, groundSize, 0, groundLayer);
+
         HammerSlam();
         InvicibilityAnimation();
 
@@ -243,7 +245,9 @@ public class LocalPlayerController : NetworkBehaviour
         Vector2 direction = Vector2.up;
         if (height < 0.0f)
             direction = Vector2.down;
-        
+
+        rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
+
         CmdApplyForce(direction * rigid.mass * 50 * jumpForce);
         //Update pos + vitesse
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
