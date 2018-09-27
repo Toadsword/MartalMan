@@ -208,7 +208,7 @@ public class LocalPlayerController : NetworkBehaviour
                     Vector2 direction = slamDirection;
 
                     // Pour empecher le fait de slam dans la direction opposé une fois que le marteau arrive à sa destination
-                    if (slamDirection.x - hammerDirection.x > slamDirection.x) 
+                    if (Mathf.Approximately(slamDirection.x - hammerDirection.x, 0.0f)) 
                         direction = hammerDirection;
 
                     //Pour le propulser un poil en l'air
