@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_TestNetworking/_test.unity
     guid: d64bbc6d41261ce46b8fb8c5c7d63384
+  - enabled: 0
+    path: Assets/Scenes/testNetwork.unity
+    guid: 3e5a5924e3f3595469688a59500028e6
   m_configObjects: {}

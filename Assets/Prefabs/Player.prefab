@@ -20,8 +20,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4271976269801638}
   - component: {fileID: 114285236872598258}
-  - component: {fileID: 114201728811346138}
-  - component: {fileID: 114597408385252594}
   - component: {fileID: 212245436411861856}
   - component: {fileID: 50955715854245358}
   - component: {fileID: 61297274534816496}
@@ -148,27 +146,6 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &114201728811346138
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1178452262387260}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1768714887, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_TransformSyncMode: 2
-  m_SendInterval: 0.033333335
-  m_SyncRotationAxis: 3
-  m_RotationSyncCompression: 0
-  m_SyncSpin: 0
-  m_MovementTheshold: 0.001
-  m_VelocityThreshold: 0.0001
-  m_SnapThreshold: 5
-  m_InterpolateRotation: 1
-  m_InterpolateMovement: 1
 --- !u!114 &114222241569271892
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -261,25 +238,6 @@ MonoBehaviour:
   hammerSize: {x: 0.5, y: 0.5}
   timeBeforePropelling: 0.1
   rigid: {fileID: 0}
---- !u!114 &114597408385252594
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1178452262387260}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1267208747, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Target: {fileID: 4050032755906412}
-  m_ChildIndex: 0
-  m_SendInterval: 0
-  m_SyncRotationAxis: 0
-  m_RotationSyncCompression: 0
-  m_MovementThreshold: 0.001
-  m_InterpolateRotation: 0.5
-  m_InterpolateMovement: 0.5
 --- !u!212 &212245436411861856
 SpriteRenderer:
   m_ObjectHideFlags: 1

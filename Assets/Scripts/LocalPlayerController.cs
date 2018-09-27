@@ -45,8 +45,8 @@ public class LocalPlayerController : NetworkBehaviour
     float horizontal, lastHoriDirection;
     bool jump, isHit, grounded;
     Color baseColor = Color.white;
-    Vector2 slamDirection;
-    [SyncVar] Vector2 hammerDirection;
+    Vector2 slamDirection, oldSlamDirection;
+    Vector2 hammerDirection;
 
     // Use this for initialization
     void Start ()
@@ -108,7 +108,8 @@ public class LocalPlayerController : NetworkBehaviour
 
             if(hammerState == HammerSteps.IDLE)
             {
-                CmdStartHammering();
+                oldSlamDirection = slamDirection;
+                StartHammering();
             }
         }
     }
@@ -139,21 +140,26 @@ public class LocalPlayerController : NetworkBehaviour
         }
     }
 
-    [Command]
-    private void CmdStartHammering()
+    private void StartHammering()
     {
         hammerDirection = slamDirection;
         propelTimer = Utility.StartTimer(timeBeforePropelling);
         hammerState = HammerSteps.GOING;
-        if (isServer)
-            RpcStartHammering();
+        CmdStartHammering(slamDirection);
+    }
+
+    [Command]
+    private void CmdStartHammering(Vector2 slamDirection)
+    {
+        RpcStartHammering(slamDirection);
     }
 
     [ClientRpc]
-    private void RpcStartHammering()
+    private void RpcStartHammering(Vector2 argSlamDirection)
     {
         if (!isLocalPlayer)
         {
+            hammerDirection = argSlamDirection;
             propelTimer = Utility.StartTimer(timeBeforePropelling);
             hammerState = HammerSteps.GOING;
         }
@@ -178,21 +184,24 @@ public class LocalPlayerController : NetworkBehaviour
             case HammerSteps.SLAMMING:
                 hammerState = HammerSteps.RETURNING;
                 propellingObj.GetComponent<SpriteRenderer>().color = Color.green;
-                List<GameObject> players = propellingObj.GetComponent<PropellingBehavior>().GetTouchingPlayers();
-
-                Vector2 direction = slamDirection;
-
-                // Pour empecher le fait de slam dans la direction opposé une fois que le marteau arrive à sa destination
-                if (slamDirection.x - hammerDirection.x > slamDirection.x) 
-                    direction = hammerDirection;
-
-                //Pour le propulser un poil en l'air
-                if (Mathf.Approximately(direction.y, 0.0f))
-                    direction.y = 0.3f;
-
-                foreach (GameObject player in players)
+                if (isServer)
                 {
-                    player.GetComponent<LocalPlayerController>().RpcGetHit(direction, force);
+                    List<GameObject> players = propellingObj.GetComponent<PropellingBehavior>().GetTouchingPlayers();
+
+                    Vector2 direction = slamDirection;
+
+                    // Pour empecher le fait de slam dans la direction opposé une fois que le marteau arrive à sa destination
+                    if (slamDirection.x - hammerDirection.x > slamDirection.x) 
+                        direction = hammerDirection;
+
+                    //Pour le propulser un poil en l'air
+                    if (Mathf.Approximately(direction.y, 0.0f))
+                        direction.y = 0.3f;
+
+                    foreach (GameObject player in players)
+                    {
+                        player.GetComponent<LocalPlayerController>().CmdGetHit(direction * force);
+                    }
                 }
                 propelTimer = Utility.StartTimer(timeBeforePropelling);
                 break;
@@ -211,22 +220,49 @@ public class LocalPlayerController : NetworkBehaviour
                 propellingObj.transform.localPosition = new Vector2(0.0f, 0.0f);
                 break;
         }
+
+        if(isLocalPlayer && hammerState != HammerSteps.IDLE)
+        {
+            if(oldSlamDirection != slamDirection)
+            {
+                CmdUpdateHammerSlam(slamDirection);
+                oldSlamDirection = slamDirection;
+            }
+        }
     }
     
     private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
     {
         Vector2 force = desiredValue - actualValue;
-        CmdApplyForce(force / divider);
+        ApplyForce(force / divider);
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
     }
 
+    [Command]
+    private void CmdUpdateHammerSlam(Vector2 slamDirection)
+    {
+        RpcUpdateHammerSlam(slamDirection);
+    }
+
     [ClientRpc]
-    public void RpcGetHit(Vector2 direction, float force)
+    private void RpcUpdateHammerSlam(Vector2 argSlamDirection)
+    {
+        slamDirection = argSlamDirection;
+    }
+
+    [Command]
+    public void CmdGetHit(Vector2 force)
+    {
+        RpcGetHit(force);
+    }
+
+    [ClientRpc]
+    public void RpcGetHit(Vector2 force)
     {
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-            CmdApplyForce(direction * force);
+            ApplyForce(force);
             //Update pos + vitesse
             UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         }
@@ -242,17 +278,21 @@ public class LocalPlayerController : NetworkBehaviour
 
         rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
 
-        CmdApplyForce(direction * rigid.mass * 50 * jumpForce);
+        ApplyForce(direction * rigid.mass * 50 * jumpForce);
         //Update pos + vitesse
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
     } 
 
+    private void ApplyForce(Vector2 force)
+    {
+        rigid.AddForce(force);
+        CmdApplyForce(force);
+    }
+
     [Command]
     private void CmdApplyForce(Vector2 force)
     {
-        rigid.AddForce(force);
-        if (isServer)
-            RpcApplyForce(force);
+        RpcApplyForce(force);
     }
 
     [ClientRpc]
