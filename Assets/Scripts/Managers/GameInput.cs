@@ -31,6 +31,11 @@ public static class GameInput {
         DOWN,
         ALWAYS
     }
+    public enum DirectionType
+    {
+        MOUSE,
+        INPUT
+    }
 
     public static bool GetInputDown(InputType inputType)
     {
@@ -192,20 +197,30 @@ public static class GameInput {
         return deltaMove;
     }
 
-    public static Vector2 GetDirection()
+    public static Vector2 GetDirection(DirectionType directionType, Vector2 origin)
     {
         Vector2 direction = new Vector2(0, 0);
-        InputDevice device = InputManager.ActiveDevice;
+        CheckLastControllerUsed();
         
-        direction.x = GetAxis(AxisType.HORIZONTAL);
-        direction.y = GetAxis(AxisType.VERTICAL);
+        if(directionType == DirectionType.MOUSE && keyboardLastPressed)
+        {
+            Vector3 v3 = Input.mousePosition;
+            v3.z = 10.0f;
+            v3 = Camera.main.ScreenToWorldPoint(v3);
 
+            direction = new Vector2(origin.x - v3.x, origin.y - v3.y);
+        }
+        else
+        {
+            direction.x = GetAxis(AxisType.HORIZONTAL);
+            direction.y = GetAxis(AxisType.VERTICAL);
+        }
+        
         direction.Normalize();
 
         if (logInput && (direction.x != 0.0f || direction.y != 0.0f))
             Debug.Log("Moving : " + direction.ToString());
 
-        CheckLastControllerUsed();
         return direction;
     }
 

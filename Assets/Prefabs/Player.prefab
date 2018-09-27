@@ -237,6 +237,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   hammerSize: {x: 0.5, y: 0.5}
   timeBeforePropelling: 0.1
+  syncPosRate: 10
   rigid: {fileID: 0}
 --- !u!212 &212245436411861856
 SpriteRenderer:

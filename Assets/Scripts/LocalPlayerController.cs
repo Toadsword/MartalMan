@@ -14,7 +14,7 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] LayerMask groundLayer;
 
     [SerializeField] float invincibilityTime = 0.1f;
-    float timerInvincibility;
+    float timerInvincibility = 0.0f;
 
     [Header("Propellant")]
     [SerializeField] GameObject propellingObj;
@@ -22,7 +22,11 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] AnimationCurve hammerCurve;
     [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
-    float propelTimer;
+    float propelTimer = 0.0f;
+
+    [Header("Network")]
+    [SerializeField] [Range(1, 30)] float syncPosRate = 5;
+    float lastSyncTimer = 0.0f;
 
     enum HammerSteps
     {
@@ -51,9 +55,6 @@ public class LocalPlayerController : NetworkBehaviour
     // Use this for initialization
     void Start ()
     {
-        propelTimer = 0.0f;
-        timerInvincibility = 0.0f;
-
         lastHoriDirection = 1.0f;
         hammerState = HammerSteps.IDLE;
         jump = false;
@@ -61,11 +62,13 @@ public class LocalPlayerController : NetworkBehaviour
         
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
+        lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
     }
 
     public override void OnStartLocalPlayer()
     {
         baseColor = Color.blue;
+        rigid = GetComponent<Rigidbody2D>();
         GetComponent<SpriteRenderer>().color = baseColor;
         Camera.main.GetComponent<CameraBehavior>().player = gameObject;
     }
@@ -90,17 +93,18 @@ public class LocalPlayerController : NetworkBehaviour
         //Hammer
         if (GameInput.GetInputDown(GameInput.InputType.ATTACK) || hammerState != HammerSteps.IDLE)
         {
-            if (GameInput.GetInput(GameInput.InputType.DOWN)) // Down attack
+            Vector2 direction = GameInput.GetDirection(GameInput.DirectionType.MOUSE, transform.position);
+            if (direction.y > 0.0f && Mathf.Abs(direction.y) > Mathf.Abs(direction.x)) // Down attack
             {
                 slamDirection = Vector2.down;
             }
-            else if (GameInput.GetInput(GameInput.InputType.UP))// Up attack
+            else if (Mathf.Abs(direction.y) > Mathf.Abs(direction.x))// Up attack
             {
                 slamDirection = Vector2.up;
             }
             else // Right/Left attack, depending on lastHorizontal
             {
-                if (lastHoriDirection > 0.0f)
+                if (direction.x < 0.0f)
                     slamDirection = Vector2.right;
                 else
                     slamDirection = Vector2.left;
@@ -121,11 +125,13 @@ public class LocalPlayerController : NetworkBehaviour
         HammerSlam();
         InvicibilityAnimation();
 
-        if (!isLocalPlayer)
-            return;
+        bool doNetwork = Mathf.Abs(horizontal) > 0.01;
 
-        Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
-        ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
+        if(doNetwork)
+        {
+            Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
+            ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
+        }
 
         // Cap speed
         if (rigid.velocity.x > speed || rigid.velocity.x < -speed)
@@ -133,6 +139,16 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
 
+       // if (Utility.IsOver(lastSyncTimer))
+        //{
+            //lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
+            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        //}
+
+
+        if (!isLocalPlayer)
+            return;
+        
         if (jump)
         {
             ApplyJumpForce(jumpHeight);
@@ -160,6 +176,7 @@ public class LocalPlayerController : NetworkBehaviour
         if (!isLocalPlayer)
         {
             hammerDirection = argSlamDirection;
+            oldSlamDirection = argSlamDirection;
             propelTimer = Utility.StartTimer(timeBeforePropelling);
             hammerState = HammerSteps.GOING;
         }
@@ -234,8 +251,8 @@ public class LocalPlayerController : NetworkBehaviour
     private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
     {
         Vector2 force = desiredValue - actualValue;
+        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         ApplyForce(force / divider);
-        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
     }
 
     [Command]
@@ -247,7 +264,8 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcUpdateHammerSlam(Vector2 argSlamDirection)
     {
-        slamDirection = argSlamDirection;
+        if(!isLocalPlayer)
+            slamDirection = argSlamDirection;
     }
 
     [Command]
@@ -262,9 +280,9 @@ public class LocalPlayerController : NetworkBehaviour
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-            ApplyForce(force);
             //Update pos + vitesse
-            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+            //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+            ApplyForce(force);
         }
     }
 
@@ -278,9 +296,9 @@ public class LocalPlayerController : NetworkBehaviour
 
         rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
 
-        ApplyForce(direction * rigid.mass * 50 * jumpForce);
         //Update pos + vitesse
-        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        ApplyForce(direction * rigid.mass * 50 * jumpForce);
     } 
 
     private void ApplyForce(Vector2 force)
