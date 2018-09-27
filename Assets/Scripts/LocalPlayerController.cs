@@ -139,16 +139,16 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
 
-       // if (Utility.IsOver(lastSyncTimer))
-        //{
-            //lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
-            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        //}
-
 
         if (!isLocalPlayer)
             return;
-        
+
+        //if (Utility.IsOver(lastSyncTimer))
+        //{
+        //  lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
+            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        //}
+
         if (jump)
         {
             ApplyJumpForce(jumpHeight);
