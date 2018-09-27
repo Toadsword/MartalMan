@@ -43,8 +43,7 @@ public class LocalPlayerController : NetworkBehaviour
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
     float horizontal, lastHoriDirection;
-    bool jump, isHit;
-    bool grounded;
+    bool jump, isHit, grounded;
     Color baseColor = Color.white;
     Vector2 slamDirection;
     [SyncVar] Vector2 hammerDirection;
@@ -112,15 +111,6 @@ public class LocalPlayerController : NetworkBehaviour
                 CmdStartHammering();
             }
         }
-        //Tests
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            if (Mathf.Approximately(rigid.velocity.x, 0.0f) &&
-                Mathf.Approximately(rigid.velocity.y, 0.0f) &&
-                (Mathf.Approximately(horizontal, 0.0f) ||
-                !jump))
-                UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        }
     }
 
     private void FixedUpdate()
@@ -155,14 +145,18 @@ public class LocalPlayerController : NetworkBehaviour
         hammerDirection = slamDirection;
         propelTimer = Utility.StartTimer(timeBeforePropelling);
         hammerState = HammerSteps.GOING;
-        RpcStartHammering();
+        if (isServer)
+            RpcStartHammering();
     }
 
     [ClientRpc]
     private void RpcStartHammering()
     {
-        propelTimer = Utility.StartTimer(timeBeforePropelling);
-        hammerState = HammerSteps.GOING;
+        if (!isLocalPlayer)
+        {
+            propelTimer = Utility.StartTimer(timeBeforePropelling);
+            hammerState = HammerSteps.GOING;
+        }
     }
     
     private void HammerSlam()
@@ -264,7 +258,7 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcApplyForce(Vector2 force)
     {
-        if(!isServer)
+        if(!isLocalPlayer)
             rigid.AddForce(force);
     }
 
