@@ -12,9 +12,16 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] Vector2 feetPosition = new Vector2(0.0f, -0.6f);
     [SerializeField] Vector2 groundSize = new Vector2(0.9f, 0.1f);
     [SerializeField] LayerMask groundLayer;
-
+    [SerializeField] public GameManager.PLAYER_TEAM team = GameManager.PLAYER_TEAM.NO_TEAM;
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
+
+    [Header("Health")]
+    [SerializeField] int maxHealth = 3;
+    [SerializeField] int currentHealth;
+
+    [Header("Flag")]
+    [SerializeField] public FlagBehavior flag;
 
     [Header("Propellant")]
     [SerializeField] GameObject propellingObj;
@@ -59,7 +66,9 @@ public class LocalPlayerController : NetworkBehaviour
         hammerState = HammerSteps.IDLE;
         jump = false;
         isHit = false;
-        
+
+        currentHealth = maxHealth;
+
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
         lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
@@ -67,6 +76,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
+        currentHealth = maxHealth;
         baseColor = Color.blue;
         rigid = GetComponent<Rigidbody2D>();
         GetComponent<SpriteRenderer>().color = baseColor;
@@ -116,6 +126,11 @@ public class LocalPlayerController : NetworkBehaviour
                 StartHammering();
             }
         }
+
+        if(Input.GetKeyDown(KeyCode.K))
+        {
+            DropFlag();
+        }
     }
 
     private void FixedUpdate()
@@ -138,7 +153,6 @@ public class LocalPlayerController : NetworkBehaviour
         {
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
         }
-
 
         if (!isLocalPlayer)
             return;
@@ -284,6 +298,14 @@ public class LocalPlayerController : NetworkBehaviour
             //Update pos + vitesse
             //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
             ApplyForce(force);
+            if(isLocalPlayer)
+            {
+                currentHealth--;
+                if(currentHealth <= 0)
+                {
+                    TriggerDeath();
+                }
+            }
         }
     }
 
@@ -367,6 +389,21 @@ public class LocalPlayerController : NetworkBehaviour
         else
         {
             sprite.color = baseColor;
+        }
+    }
+
+    private void TriggerDeath()
+    {
+        //Respawn();
+        DropFlag();
+    }
+
+    private void DropFlag()
+    {
+        if(flag != null)
+        {
+            flag.DropFlag();
+            flag = null;
         }
     }
 }

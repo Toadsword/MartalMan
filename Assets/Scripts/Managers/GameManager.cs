@@ -4,28 +4,22 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
-
-    [Header("Prefabs")]
-    [SerializeField] public GameObject currentPanel;
+    
+    public enum PLAYER_TEAM
+    {
+        NO_TEAM,
+        RED,
+        BLUE
+    }
 
     [Header("Public Vars")]    
-    public bool allowMovements = false;
-    public bool isGameRunning = false;
-    public bool isGameWon = false;
-    public bool gameFrozen = false;
     public bool gamePaused = false;
-    public bool changingPanel = false;
-
-    public bool isPlayerDead = false;
 
     // Menu gestion
     public Selectable[] menuBtns;
     public int selectedIndex = 0;
     public bool isInMenu = false;
-
-    public int coinCount = 0;
-    public int coinCountSaved = 0;
-
+    
     public GameObject pauseCanvas;
 
     public static GameManager _instance;
@@ -39,12 +33,9 @@ public class GameManager : MonoBehaviour {
     void Start ()
     {
         DontDestroyOnLoad(gameObject);
-
-        allowMovements = true;
-        gameFrozen = false;
+        
         gamePaused = false;
         isInMenu = false;
-        changingPanel = false;
 
         GameObject tempPauseCanvas = GameObject.Find("PauseCanvas");
         if (tempPauseCanvas)
@@ -63,15 +54,9 @@ public class GameManager : MonoBehaviour {
 
                 if (SoundManager._instance)
                     SoundManager._instance.PlayMusic(SoundManager.MusicList.MENU);
-
-                coinCountSaved = 0;
-                coinCount = 0;
+                
                 break;
             case SceneManagement.Scenes.GAME:
-                coinCountSaved = 0;
-                coinCount = 0;
-                allowMovements = true;
-                isGameRunning = true;
                 isInMenu = false;
                 gamePaused = false;
 
@@ -83,18 +68,6 @@ public class GameManager : MonoBehaviour {
                     SoundManager._instance.PlayMusic(SoundManager.MusicList.CAVE);
                 break;
         } // End switch
-    }
-
-    public void FreezeGame(bool doFreeze)
-    {
-        gameFrozen = doFreeze;
-        EventManager.DoFreeze();
-    }
-
-    public void TriggerPlayerDeath()
-    {
-        isPlayerDead = true;
-        allowMovements = false;
     }
 
     public void SaveCurrentState()
@@ -127,13 +100,12 @@ public class GameManager : MonoBehaviour {
             NavigateMenu(false);
         if (GameInput.GetInputDown(GameInput.InputType.UP) || GameInput.GetInputDown(GameInput.InputType.RIGHT))
             NavigateMenu(true);
-        if (GameInput.GetInputDown(GameInput.InputType.JUMP))
+        if (GameInput.GetInputDown(GameInput.InputType.JUMP) || GameInput.GetInputDown(GameInput.InputType.ATTACK))
             SubmitButtonAction();
     }
 
     public void NavigateMenu(bool onLeft)
     {
-        Debug.Log("NavigateMenu : " + onLeft);
         if (isInMenu)
         {
             if (onLeft)
@@ -161,7 +133,6 @@ public class GameManager : MonoBehaviour {
         int newIndex = 0;
         foreach(Selectable btn in menuBtns)
         {
-            Debug.Log(" NAME ; " + btn.name + " ;WANTED : " + name);
             if (btn.name == name)
             {
                 selectedIndex = newIndex;
@@ -174,7 +145,6 @@ public class GameManager : MonoBehaviour {
 
     public void SubmitButtonAction()
     {
-        Transform panel;
         switch (menuBtns[selectedIndex].name)
         {
             case "ButtonPlay":
@@ -223,7 +193,12 @@ public class GameManager : MonoBehaviour {
 
     public bool PlayerCanMove()
     {
-        return !(isInMenu || !allowMovements || gamePaused);
+        return !(isInMenu || gamePaused);
+    }
+
+    public void TeamWin(PLAYER_TEAM team)
+    {
+        // :)
     }
 }
 
