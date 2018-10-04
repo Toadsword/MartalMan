@@ -163,7 +163,7 @@ public class FlagBehavior : NetworkBehaviour
         }
         else
         {
-            rigid.bodyType = RigidbodyType2D.Static;
+            rigid.bodyType = RigidbodyType2D.Kinematic; // To allow collision detection
             rigid.velocity = new Vector2();
             rigid.gravityScale = 0.0f;
         }

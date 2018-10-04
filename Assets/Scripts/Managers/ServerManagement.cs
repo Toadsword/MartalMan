@@ -70,6 +70,7 @@ public class ServerManagement : NetworkBehaviour {
     public void TeamWin(PLAYER_TEAM team)
     {
         // :)
+        Debug.LogError(team + " TEAM WIN");
     }
 
     public LocalPlayerController GetPlayerObjFromId(short playerId)

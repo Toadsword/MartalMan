@@ -18,7 +18,8 @@ public static class GameInput {
         DOWN,
         JUMP,
         ATTACK,
-        PAUSE
+        PAUSE,
+        DROP_FLAG
     }
     public enum AxisType
     {
@@ -84,6 +85,11 @@ public static class GameInput {
                 result = GetInput(InputControlType.Action2, timeType) ||
                             GetInput(KeyCode.E, timeType) ||
                             GetInput(0, timeType);
+                break;
+            case InputType.DROP_FLAG:
+                result = GetInput(InputControlType.Action2, timeType) ||
+                            GetInput(KeyCode.F, timeType) ||
+                            GetInput(1, timeType);
                 break;
             case InputType.PAUSE:
                 result = GetInput(InputControlType.Start, timeType) ||

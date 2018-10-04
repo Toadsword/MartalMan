@@ -90,7 +90,6 @@ public class LocalPlayerController : NetworkBehaviour
     void Update () {
         if (!isLocalPlayer)
             return;
-        //Debug.LogError("playerId " + playerId);
 
         //Acceleration
         horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
@@ -131,7 +130,7 @@ public class LocalPlayerController : NetworkBehaviour
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.K))
+        if(GameInput.GetInputDown(GameInput.InputType.DROP_FLAG))
         {
             CmdDropFlag();
         }
