@@ -23,7 +23,6 @@ GameObject:
   - component: {fileID: 114341732729162678}
   - component: {fileID: 114804426702778672}
   - component: {fileID: 50874182214148938}
-  - component: {fileID: 61118372065379538}
   m_Layer: 0
   m_Name: FlagBlue
   m_TagString: Untagged
@@ -41,7 +40,8 @@ GameObject:
   - component: {fileID: 4224585908140276}
   - component: {fileID: 212630180140659268}
   - component: {fileID: 95205700666087282}
-  m_Layer: 0
+  - component: {fileID: 61311491025157134}
+  m_Layer: 10
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -95,19 +95,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!61 &61118372065379538
+--- !u!61 &61311491025157134
 BoxCollider2D:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1700299250731242}
+  m_GameObject: {fileID: 1919344619304882}
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.5}
+  m_Offset: {x: -0.4, y: -0.1}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -118,7 +118,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.01, y: 0.01}
+  m_Size: {x: 0.2, y: 0.8}
   m_EdgeRadius: 0
 --- !u!61 &61900463515504276
 BoxCollider2D:
@@ -209,7 +209,6 @@ MonoBehaviour:
   syncPosRate: 5
   team: 2
   teamBase: {fileID: 0}
-  groundCollider: {fileID: 61118372065379538}
   gravityScaleFlag: 0.35
   offsetWhenTaken: {x: 0, y: 0.8}
 --- !u!212 &212630180140659268

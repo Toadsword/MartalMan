@@ -6,13 +6,14 @@ using UnityEngine.Networking;
 public class LocalPlayerController : NetworkBehaviour
 {
     [Header("Player")]
+    [SerializeField] [SyncVar] public short playerId;
     [SerializeField] float speed = 9.0f;
     [SerializeField] float speedAcc = 2.0f;
     [SerializeField] float jumpHeight = 5.0f;
     [SerializeField] Vector2 feetPosition = new Vector2(0.0f, -0.6f);
     [SerializeField] Vector2 groundSize = new Vector2(0.9f, 0.1f);
     [SerializeField] LayerMask groundLayer;
-    [SerializeField] public GameManager.PLAYER_TEAM team = GameManager.PLAYER_TEAM.NO_TEAM;
+    [SerializeField] public ServerManagement.PLAYER_TEAM team = ServerManagement.PLAYER_TEAM.NO_TEAM;
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
 
@@ -72,6 +73,7 @@ public class LocalPlayerController : NetworkBehaviour
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
         lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
+        SetTeamColor();
     }
 
     public override void OnStartLocalPlayer()
@@ -81,12 +83,14 @@ public class LocalPlayerController : NetworkBehaviour
         rigid = GetComponent<Rigidbody2D>();
         GetComponent<SpriteRenderer>().color = baseColor;
         Camera.main.GetComponent<CameraBehavior>().player = gameObject;
+        SetTeamColor();
     }
 
     // Update is called once per frame // USED FOR INPUTS
     void Update () {
         if (!isLocalPlayer)
             return;
+        //Debug.LogError("playerId " + playerId);
 
         //Acceleration
         horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
@@ -129,38 +133,39 @@ public class LocalPlayerController : NetworkBehaviour
 
         if(Input.GetKeyDown(KeyCode.K))
         {
-            DropFlag();
+            CmdDropFlag();
         }
     }
 
     private void FixedUpdate()
     {
+        if(!rigid)
+            rigid = GetComponent<Rigidbody2D>();
+
         grounded = Physics2D.OverlapBox(rigid.position + feetPosition, groundSize, 0, groundLayer);
 
         HammerSlam();
         InvicibilityAnimation();
 
-        bool doNetwork = Mathf.Abs(horizontal) > 0.01;
-
-        if(doNetwork)
-        {
-            Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
-            ApplyForceAcc(rigid.velocity, newSpeed, speedAcc);
-        }
-
         // Cap speed
         if (rigid.velocity.x > speed || rigid.velocity.x < -speed)
         {
-            ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f);
+            ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
         }
 
         if (!isLocalPlayer)
             return;
 
+        if (Mathf.Abs(horizontal) > 0.01)
+        {
+            Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
+            ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true );
+        }
+
         //if (Utility.IsOver(lastSyncTimer))
         //{
         //  lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
-            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         //}
 
         if (jump)
@@ -263,11 +268,11 @@ public class LocalPlayerController : NetworkBehaviour
         }
     }
     
-    private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider)
+    private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider, bool doNetwork)
     {
         Vector2 force = desiredValue - actualValue;
         //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        ApplyForce(force / divider);
+        ApplyForce(force / divider, doNetwork);
     }
 
     [Command]
@@ -324,10 +329,11 @@ public class LocalPlayerController : NetworkBehaviour
         ApplyForce(direction * rigid.mass * 50 * jumpForce);
     } 
 
-    private void ApplyForce(Vector2 force)
+    private void ApplyForce(Vector2 force, bool doNetwork = true)
     {
         rigid.AddForce(force);
-        CmdApplyForce(force);
+        if(doNetwork)
+            CmdApplyForce(force);
     }
 
     [Command]
@@ -370,6 +376,9 @@ public class LocalPlayerController : NetworkBehaviour
     {
         if (!isLocalPlayer)
         {
+            if (!rigid)
+                rigid = GetComponent<Rigidbody2D>();
+
             if (method == NetworkUpdtMethod.SYNC_POS)
                 transform.position = value;
             else if(method == NetworkUpdtMethod.SYNC_VEL)
@@ -391,18 +400,46 @@ public class LocalPlayerController : NetworkBehaviour
             sprite.color = baseColor;
         }
     }
+    
+    [ClientRpc]
+    public void RpcSetTeam(ServerManagement.PLAYER_TEAM team)
+    {
+        this.team = team;
+
+        if(!isLocalPlayer)
+        {
+            SetTeamColor();
+        }
+    }
+
+    private void SetTeamColor()
+    {
+        switch (team)
+        {
+            case ServerManagement.PLAYER_TEAM.BLUE:
+                baseColor = Color.blue;
+                break;
+            case ServerManagement.PLAYER_TEAM.RED:
+                baseColor = Color.red;
+                break;
+        }
+        if (sprite)
+            sprite.color = baseColor;
+    }
+
 
     private void TriggerDeath()
     {
         //Respawn();
-        DropFlag();
+        CmdDropFlag();
     }
 
-    private void DropFlag()
+    [Command]
+    private void CmdDropFlag()
     {
         if(flag != null)
         {
-            flag.DropFlag();
+            flag.RpcDropFlag();
             flag = null;
         }
     }

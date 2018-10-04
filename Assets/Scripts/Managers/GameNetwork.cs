@@ -7,8 +7,6 @@ namespace UnityEngine.Networking
 {
     public class GameNetwork : NetworkManager
     {
-        PlayerController clientPlayer;
-
         public static GameNetwork _instance;
 
         private void Awake()
@@ -17,11 +15,6 @@ namespace UnityEngine.Networking
                 _instance = this;
             else
                 Destroy(gameObject);
-        }
-
-        private void Start()
-        {
-            clientPlayer = null;
         }
 
         public override void OnServerConnect(NetworkConnection conn)
@@ -50,15 +43,20 @@ namespace UnityEngine.Networking
 
         public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId)
         {
-            base.OnServerAddPlayer(conn, playerControllerId);
+            //base.OnServerAddPlayer(conn, playerControllerId);
+            GameObject newPlayer = Instantiate(playerPrefab, playerPrefab.transform.position, playerPrefab.transform.rotation);
+            NetworkServer.AddPlayerForConnection(conn, newPlayer, playerControllerId);
+
+            ServerManagement._instance.SetupNewPlayerNetwork(playerControllerId, newPlayer.GetComponent<LocalPlayerController>());
+
             Debug.Log("AddPlayerControllerId : " + playerControllerId);
         }
 
         public override void OnServerRemovePlayer(NetworkConnection conn, PlayerController player)
         {
             base.OnServerRemovePlayer(conn, player);
+            ServerManagement._instance.RpcRemovePlayer(player.playerControllerId);
             Debug.Log("RemovePlayer : " + player.playerControllerId);
         }
-        
     }
 }

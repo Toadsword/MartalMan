@@ -5,12 +5,6 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
     
-    public enum PLAYER_TEAM
-    {
-        NO_TEAM,
-        RED,
-        BLUE
-    }
 
     [Header("Public Vars")]    
     public bool gamePaused = false;
@@ -196,9 +190,5 @@ public class GameManager : MonoBehaviour {
         return !(isInMenu || gamePaused);
     }
 
-    public void TeamWin(PLAYER_TEAM team)
-    {
-        // :)
-    }
 }
 
