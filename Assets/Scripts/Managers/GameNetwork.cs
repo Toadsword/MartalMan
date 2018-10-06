@@ -7,6 +7,8 @@ namespace UnityEngine.Networking
 {
     public class GameNetwork : NetworkManager
     {
+        public NetworkDiscovery discovery;
+
         public static GameNetwork _instance;
 
         private void Awake()
@@ -47,7 +49,7 @@ namespace UnityEngine.Networking
             GameObject newPlayer = Instantiate(playerPrefab, playerPrefab.transform.position, playerPrefab.transform.rotation);
             NetworkServer.AddPlayerForConnection(conn, newPlayer, playerControllerId);
 
-            ServerManagement._instance.SetupNewPlayerNetwork(playerControllerId, newPlayer.GetComponent<LocalPlayerController>());
+            //ServerManagement._instance.SetupNewPlayerNetwork(playerControllerId, newPlayer.GetComponent<LocalPlayerController>());
 
             Debug.Log("AddPlayerControllerId : " + playerControllerId);
         }
@@ -55,8 +57,28 @@ namespace UnityEngine.Networking
         public override void OnServerRemovePlayer(NetworkConnection conn, PlayerController player)
         {
             base.OnServerRemovePlayer(conn, player);
-            ServerManagement._instance.RpcRemovePlayer(player.playerControllerId);
+            //ServerManagement._instance.RpcRemovePlayer(player.playerControllerId);
             Debug.Log("RemovePlayer : " + player.playerControllerId);
         }
+
+        /* BROADCASTING */
+        /*
+        public override void OnStartHost()
+        {
+            discovery.Initialize();
+            discovery.StartAsServer();
+        }
+
+        public override void OnStartClient(NetworkClient client)
+        {
+            discovery.showGUI = false;
+        }
+
+        public override void OnStopClient()
+        {
+            discovery.StopBroadcast();
+            discovery.showGUI = true;
+        }
+        */
     }
 }

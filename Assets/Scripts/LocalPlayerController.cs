@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using NetworkLobby;
 
 public class LocalPlayerController : NetworkBehaviour
 {
@@ -13,7 +14,6 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] Vector2 feetPosition = new Vector2(0.0f, -0.6f);
     [SerializeField] Vector2 groundSize = new Vector2(0.9f, 0.1f);
     [SerializeField] LayerMask groundLayer;
-    [SerializeField] public ServerManagement.PLAYER_TEAM team = ServerManagement.PLAYER_TEAM.NO_TEAM;
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
 
@@ -31,6 +31,11 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
     float propelTimer = 0.0f;
+
+    [Header("Network Infos")]
+    [SyncVar] public string playerName = "...";
+    [SyncVar] public LobbyPlayer.PlayerTeam team;
+    [SyncVar] Color color;
 
     [Header("Network")]
     [SerializeField] [Range(1, 30)] float syncPosRate = 5;
@@ -401,7 +406,7 @@ public class LocalPlayerController : NetworkBehaviour
     }
     
     [ClientRpc]
-    public void RpcSetTeam(ServerManagement.PLAYER_TEAM team)
+    public void RpcSetTeam(LobbyPlayer.PlayerTeam team)
     {
         this.team = team;
 
@@ -415,10 +420,10 @@ public class LocalPlayerController : NetworkBehaviour
     {
         switch (team)
         {
-            case ServerManagement.PLAYER_TEAM.BLUE:
+            case LobbyPlayer.PlayerTeam.BLUE:
                 baseColor = Color.blue;
                 break;
-            case ServerManagement.PLAYER_TEAM.RED:
+            case LobbyPlayer.PlayerTeam.RED:
                 baseColor = Color.red;
                 break;
         }

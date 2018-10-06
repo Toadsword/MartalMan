@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using NetworkLobby;
 
 [RequireComponent(typeof(BoxCollider2D))]
 public class FlagBehavior : NetworkBehaviour
@@ -9,7 +10,7 @@ public class FlagBehavior : NetworkBehaviour
     [Header("Network")]
     [SerializeField] [Range(1, 30)] float syncPosRate = 5;
     float lastSyncTimer = 0.0f;
-    [SerializeField] ServerManagement.PLAYER_TEAM team;
+    [SerializeField] LobbyPlayer.PlayerTeam team;
     [SerializeField] Transform teamBase;
 
     [Header("Physics")]
@@ -31,9 +32,9 @@ public class FlagBehavior : NetworkBehaviour
         if (!teamBase)
         {
             GameObject initBase = null;
-            if(team == ServerManagement.PLAYER_TEAM.RED)
+            if(team == LobbyPlayer.PlayerTeam.RED)
                 initBase = GameObject.FindGameObjectsWithTag("RedBase")[0];
-            else if(team == ServerManagement.PLAYER_TEAM.BLUE)
+            else if(team == LobbyPlayer.PlayerTeam.BLUE)
                 initBase = GameObject.FindGameObjectsWithTag("BlueBase")[0];
 
             if(!initBase != null)
@@ -110,10 +111,10 @@ public class FlagBehavior : NetworkBehaviour
                 }
             }
         }
-        else if (collision.tag == "RedBase" && team == ServerManagement.PLAYER_TEAM.BLUE ||
-            collision.tag == "BlueBase" && team == ServerManagement.PLAYER_TEAM.RED)
+        else if (collision.tag == "RedBase" && team == LobbyPlayer.PlayerTeam.BLUE ||
+            collision.tag == "BlueBase" && team == LobbyPlayer.PlayerTeam.RED)
         {
-            ServerManagement._instance.TeamWin(team);
+            // ServerManagement._instance.TeamWin(team);
         }
     }
 
@@ -128,8 +129,9 @@ public class FlagBehavior : NetworkBehaviour
     [ClientRpc]
     public void RpcTakeFlag(short playerId)
     {
-        ServerManagement._instance.UpdateCurrentPlayers();
-        player = ServerManagement._instance.GetPlayerObjFromId(playerId);
+        // TODO : UPDATE LE FAIT DE POUVOIR CHOPPER LE PLAYER FACILEMENT
+        //ServerManagement._instance.UpdateCurrentPlayers();
+        //player = ServerManagement._instance.GetPlayerObjFromId(playerId);
         if (!player)
             return;
 

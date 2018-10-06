@@ -5,6 +5,9 @@ using UnityEngine.Networking;
 
 public class ServerManagement : NetworkBehaviour {
 
+
+    /*** OLD VERSION, NOW USING LOBBYPLAY/LOBBYPLAYERLIST, ETC ***/
+    /*
     public enum PLAYER_TEAM
     {
         NO_TEAM,
@@ -111,4 +114,5 @@ public class ServerManagement : NetworkBehaviour {
         if (playerToRemove != null)
             players.Remove(playerToRemove);
     }
+    */
 }
