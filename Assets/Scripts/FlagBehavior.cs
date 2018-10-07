@@ -33,9 +33,9 @@ public class FlagBehavior : NetworkBehaviour
         {
             GameObject initBase = null;
             if(team == LobbyPlayer.PlayerTeam.RED)
-                initBase = GameObject.FindGameObjectsWithTag("RedBase")[0];
-            else if(team == LobbyPlayer.PlayerTeam.BLUE)
-                initBase = GameObject.FindGameObjectsWithTag("BlueBase")[0];
+                initBase = GameObject.FindGameObjectWithTag("RedBase");
+            else
+                initBase = GameObject.FindGameObjectWithTag("BlueBase");
 
             if(!initBase != null)
             {
@@ -46,7 +46,6 @@ public class FlagBehavior : NetworkBehaviour
         if (teamBase)
         {
             transform.position = teamBase.position;
-
         }
     }
 
@@ -84,7 +83,6 @@ public class FlagBehavior : NetworkBehaviour
         {
             rigid.velocity = speed;
             transform.position = position;
-
         }
     }
 

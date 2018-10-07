@@ -33,13 +33,9 @@ public class LocalPlayerController : NetworkBehaviour
     float propelTimer = 0.0f;
 
     [Header("Network Infos")]
-    [SyncVar] public string playerName = "...";
-    [SyncVar] public LobbyPlayer.PlayerTeam team;
-    [SyncVar] Color color;
-
-    [Header("Network")]
-    [SerializeField] [Range(1, 30)] float syncPosRate = 5;
-    float lastSyncTimer = 0.0f;
+    [SyncVar(hook = "OnChangeName")] public string playerName = "...";
+    [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam team;
+    [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType skin;
 
     enum HammerSteps
     {
@@ -62,8 +58,8 @@ public class LocalPlayerController : NetworkBehaviour
     float horizontal, lastHoriDirection;
     bool jump, isHit, grounded;
     Color baseColor = Color.white;
-    Vector2 slamDirection, oldSlamDirection;
-    Vector2 hammerDirection;
+    Vector2 slamDirection, oldSlamDirection, hammerDirection;
+    Vector2 spawnPosition;
 
     // Use this for initialization
     void Start ()
@@ -77,18 +73,30 @@ public class LocalPlayerController : NetworkBehaviour
 
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
-        lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
-        SetTeamColor();
+        spawnPosition = GameObject.FindGameObjectWithTag("RedBase").transform.position;
+        if (isLocalPlayer)
+            Camera.main.GetComponent<CameraBehavior>().player = gameObject;
     }
 
-    public override void OnStartLocalPlayer()
+    public void SetupBeginGame()
     {
+        jump = false;
+        isHit = false;
+        lastHoriDirection = 1.0f;
+        hammerState = HammerSteps.IDLE;
+
         currentHealth = maxHealth;
-        baseColor = Color.blue;
+
         rigid = GetComponent<Rigidbody2D>();
-        GetComponent<SpriteRenderer>().color = baseColor;
-        Camera.main.GetComponent<CameraBehavior>().player = gameObject;
-        SetTeamColor();
+        sprite = GetComponent<SpriteRenderer>();
+
+        if (isLocalPlayer)
+            Camera.main.GetComponent<CameraBehavior>().player = gameObject;
+        /*
+        OnChangeName(name);
+        OnChangeTeam(team);
+        OnChangeSkin(skin);
+        */
     }
 
     // Update is called once per frame // USED FOR INPUTS
@@ -165,12 +173,8 @@ public class LocalPlayerController : NetworkBehaviour
             Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
             ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true );
         }
-
-        //if (Utility.IsOver(lastSyncTimer))
-        //{
-        //  lastSyncTimer = Utility.StartTimer(1.0f / syncPosRate);
+        
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        //}
 
         if (jump)
         {
@@ -179,6 +183,7 @@ public class LocalPlayerController : NetworkBehaviour
         }
     }
 
+    #region Hammer
     private void StartHammering()
     {
         hammerDirection = slamDirection;
@@ -271,13 +276,6 @@ public class LocalPlayerController : NetworkBehaviour
             }
         }
     }
-    
-    private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider, bool doNetwork)
-    {
-        Vector2 force = desiredValue - actualValue;
-        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        ApplyForce(force / divider, doNetwork);
-    }
 
     [Command]
     private void CmdUpdateHammerSlam(Vector2 slamDirection)
@@ -288,10 +286,42 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcUpdateHammerSlam(Vector2 argSlamDirection)
     {
-        if(!isLocalPlayer)
+        if (!isLocalPlayer)
             slamDirection = argSlamDirection;
     }
+    #endregion
 
+    #region Movements
+    private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider, bool doNetwork)
+    {
+        Vector2 force = desiredValue - actualValue;
+        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        ApplyForce(force / divider, doNetwork);
+    }
+
+    private void ApplyForce(Vector2 force, bool doNetwork = true)
+    {
+        rigid.AddForce(force);
+        if (doNetwork)
+            CmdApplyForce(force);
+    }
+    private void ApplyJumpForce(float height)
+    {
+        float jumpForce = Mathf.Sqrt(Mathf.Abs(2.0f * Physics2D.gravity.y * height));
+
+        Vector2 direction = Vector2.up;
+        if (height < 0.0f)
+            direction = Vector2.down;
+
+        rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
+
+        //Update pos + vitesse
+        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        ApplyForce(direction * rigid.mass * 50 * jumpForce);
+    }
+    #endregion
+
+    #region Network Movement
     [Command]
     public void CmdGetHit(Vector2 force)
     {
@@ -317,29 +347,7 @@ public class LocalPlayerController : NetworkBehaviour
             }
         }
     }
-
-    private void ApplyJumpForce(float height)
-    {
-        float jumpForce = Mathf.Sqrt(Mathf.Abs(2.0f * Physics2D.gravity.y * height));
-
-        Vector2 direction = Vector2.up;
-        if (height < 0.0f)
-            direction = Vector2.down;
-
-        rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
-
-        //Update pos + vitesse
-        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-        ApplyForce(direction * rigid.mass * 50 * jumpForce);
-    } 
-
-    private void ApplyForce(Vector2 force, bool doNetwork = true)
-    {
-        rigid.AddForce(force);
-        if(doNetwork)
-            CmdApplyForce(force);
-    }
-
+    
     [Command]
     private void CmdApplyForce(Vector2 force)
     {
@@ -375,6 +383,7 @@ public class LocalPlayerController : NetworkBehaviour
         if (isServer)
             RpcUpdatePlayer(method, value);
     }
+
     [ClientRpc]
     private void RpcUpdatePlayer(NetworkUpdtMethod method, Vector2 value)
     {
@@ -389,6 +398,7 @@ public class LocalPlayerController : NetworkBehaviour
                 rigid.velocity = value;
         }
     }
+    #endregion
 
     private void InvicibilityAnimation()
     {
@@ -405,33 +415,6 @@ public class LocalPlayerController : NetworkBehaviour
         }
     }
     
-    [ClientRpc]
-    public void RpcSetTeam(LobbyPlayer.PlayerTeam team)
-    {
-        this.team = team;
-
-        if(!isLocalPlayer)
-        {
-            SetTeamColor();
-        }
-    }
-
-    private void SetTeamColor()
-    {
-        switch (team)
-        {
-            case LobbyPlayer.PlayerTeam.BLUE:
-                baseColor = Color.blue;
-                break;
-            case LobbyPlayer.PlayerTeam.RED:
-                baseColor = Color.red;
-                break;
-        }
-        if (sprite)
-            sprite.color = baseColor;
-    }
-
-
     private void TriggerDeath()
     {
         //Respawn();
@@ -447,4 +430,29 @@ public class LocalPlayerController : NetworkBehaviour
             flag = null;
         }
     }
+
+    #region SyncVarsTriggers
+    private void OnChangeName(string newName)
+    {
+        name = newName;
+        //Change le nom au dessus du joueur avec la nouvelle entrée
+    }
+
+    private void OnChangeTeam(LobbyPlayer.PlayerTeam newTeam)
+    {
+        team = newTeam;
+        sprite.sprite = SkinManager._instance.GetSprite(skin, team);
+        if(team == LobbyPlayer.PlayerTeam.BLUE)
+            spawnPosition = GameObject.FindGameObjectWithTag("BlueBase").transform.Find("PlayerSpawn").position;
+        else
+            spawnPosition = GameObject.FindGameObjectWithTag("RedBase").transform.Find("PlayerSpawn").position;
+        transform.position = spawnPosition;
+    }
+
+    private void OnChangeSkin(SkinManager.SkinType newType)
+    {
+        skin = newType;
+        sprite.sprite = SkinManager._instance.GetSprite(skin, team);
+    }
+    #endregion
 }
