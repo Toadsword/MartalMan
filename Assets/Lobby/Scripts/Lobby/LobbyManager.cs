@@ -6,7 +6,6 @@ using UnityEngine.Networking.Types;
 using UnityEngine.Networking.Match;
 using System.Collections;
 
-
 namespace NetworkLobby
 {
     public class LobbyManager : NetworkLobbyManager 
@@ -179,6 +178,7 @@ namespace NetworkLobby
         public void SimpleBackClbk()
         {
             ChangeTo(mainMenuPanel);
+            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
         }
                  
         public void StopHostClbk()
@@ -191,8 +191,8 @@ namespace NetworkLobby
             else
             {
                 StopHost();
+                GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
             }
-
             
             ChangeTo(mainMenuPanel);
         }
@@ -212,6 +212,7 @@ namespace NetworkLobby
         public void StopServerClbk()
         {
             StopServer();
+            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
             ChangeTo(mainMenuPanel);
         }
 
@@ -220,9 +221,6 @@ namespace NetworkLobby
         {
             conn.Send(MsgKicked, new KickMsg());
         }
-
-
-
 
         public void KickedMessageHandler(NetworkMessage netMsg)
         {
@@ -239,6 +237,8 @@ namespace NetworkLobby
             ChangeTo(lobbyPanel);
             backDelegate = StopHostClbk;
             SetServerInfo("Hosting", networkAddress);
+
+            GetComponent<LobbyNetworkDiscovery>().StartBroadcast();
         }
 
 		public override void OnMatchCreate(bool success, string extendedInfo, MatchInfo matchInfo)
@@ -403,6 +403,8 @@ namespace NetworkLobby
                 backDelegate = StopClientClbk;
                 SetServerInfo("Client", networkAddress);
             }
+
+            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
         }
 
         public override void OnClientDisconnect(NetworkConnection conn)

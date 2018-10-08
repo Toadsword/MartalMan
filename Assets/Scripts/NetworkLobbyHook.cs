@@ -15,11 +15,12 @@ public class NetworkLobbyHook : LobbyHook {
         localPlayer.SetupBeginGame();
 
         localPlayer.playerName = lobby.playerName;
+
         if (lobby.playerTeam == LobbyPlayer.PlayerTeam.BLUE)
             localPlayer.team = LobbyPlayer.PlayerTeam.BLUE;
         else
             localPlayer.team = LobbyPlayer.PlayerTeam.RED;
-        localPlayer.skin = lobby.playerSkin;
 
+        localPlayer.skin = lobby.playerSkin;
     }
 }

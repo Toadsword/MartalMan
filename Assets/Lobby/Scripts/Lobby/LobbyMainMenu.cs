@@ -10,6 +10,7 @@ namespace NetworkLobby
         public LobbyManager lobbyManager;
 
         public RectTransform lobbyServerList;
+        public RectTransform lobbyLanServerList;
         public RectTransform lobbyPanel;
 
         public InputField ipInput;
@@ -48,6 +49,7 @@ namespace NetworkLobby
         {
             lobbyManager.ChangeTo(null);
             lobbyManager.StartServer();
+            lobbyManager.GetComponent<LobbyNetworkDiscovery>().StartBroadcast();
 
             lobbyManager.backDelegate = lobbyManager.StopServerClbk;
 
@@ -76,6 +78,13 @@ namespace NetworkLobby
             lobbyManager.StartMatchMaker();
             lobbyManager.backDelegate = lobbyManager.SimpleBackClbk;
             lobbyManager.ChangeTo(lobbyServerList);
+        }
+
+        public void OnClickOpenLanServerList()
+        {
+            lobbyManager.GetComponent<LobbyNetworkDiscovery>().SearchServers();
+            lobbyManager.backDelegate = lobbyManager.SimpleBackClbk;
+            lobbyManager.ChangeTo(lobbyLanServerList);
         }
 
         void onEndEditIP(string text)
