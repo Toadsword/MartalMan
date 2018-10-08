@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Networking;
 using NetworkLobby;
 
@@ -15,10 +16,17 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] LayerMask groundLayer;
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
+    [SerializeField] float timeToRespawn = 5.0f;
+    float respawnTimer = 0.0f;
 
+    /*
     [Header("Health")]
     [SerializeField] int maxHealth = 3;
     [SerializeField] int currentHealth;
+    */
+
+    [Header("UI")]
+    [SerializeField] private Text nameText;
 
     [Header("Flag")]
     [SerializeField] public FlagBehavior flag;
@@ -56,7 +64,7 @@ public class LocalPlayerController : NetworkBehaviour
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
     float horizontal, lastHoriDirection, lastRotation;
-    bool jump, isHit, grounded;
+    bool jump, isHit, grounded, isDead;
     Color baseColor = Color.white;
     Vector2 slamDirection, oldSlamDirection, hammerDirection;
     Vector2 spawnPosition;
@@ -70,7 +78,7 @@ public class LocalPlayerController : NetworkBehaviour
         isHit = false;
         lastRotation = 0.0f;
 
-        currentHealth = maxHealth;
+        //currentHealth = maxHealth;
 
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
@@ -86,7 +94,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     // Update is called once per frame // USED FOR INPUTS
     void Update () {
-        if (!isLocalPlayer)
+        if (!isLocalPlayer || isDead)
             return;
 
         //Acceleration
@@ -162,13 +170,25 @@ public class LocalPlayerController : NetworkBehaviour
         if (!isLocalPlayer)
             return;
 
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+
+        if (isDead)
+        {
+            if (Utility.IsOver(respawnTimer))
+            {
+                Respawn();
+            }
+            else
+            {
+                return;
+            }
+        }
+
         if (Mathf.Abs(horizontal) > 0.01)
         {
             Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
             ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true );
         }
-        
-        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
 
         if (jump)
         {
@@ -317,7 +337,8 @@ public class LocalPlayerController : NetworkBehaviour
     [Command]
     public void CmdGetHit(Vector2 force)
     {
-        RpcGetHit(force);
+        if(!isDead)
+            RpcGetHit(force);
     }
 
     [ClientRpc]
@@ -326,9 +347,9 @@ public class LocalPlayerController : NetworkBehaviour
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-            //Update pos + vitesse
-            //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+
             ApplyForce(force);
+            /*
             if(isLocalPlayer)
             {
                 currentHealth--;
@@ -337,6 +358,7 @@ public class LocalPlayerController : NetworkBehaviour
                     TriggerDeath();
                 }
             }
+            */
         }
     }
     
@@ -409,8 +431,19 @@ public class LocalPlayerController : NetworkBehaviour
     
     private void TriggerDeath()
     {
-        //Respawn();
+        gameObject.layer = LayerMask.NameToLayer("Default");
+        isDead = true;
+        respawnTimer = Utility.StartTimer(timeToRespawn);
+        UpdateSkin();
         CmdDropFlag();
+    }
+
+    private void Respawn()
+    {
+        gameObject.layer = LayerMask.NameToLayer("Player");
+        isDead = false;
+        transform.position = spawnPosition;
+        UpdateSkin();
     }
 
     [Command]
@@ -427,6 +460,7 @@ public class LocalPlayerController : NetworkBehaviour
     private void OnChangeName(string newName)
     {
         //Change le nom au dessus du joueur avec la nouvelle entrée
+        nameText.text = "<b>" + newName + "</b>";
     }
 
     private void OnChangeTeam(LobbyPlayer.PlayerTeam newTeam)
@@ -454,7 +488,15 @@ public class LocalPlayerController : NetworkBehaviour
     {
         if (!sprite)
             sprite = GetComponent<SpriteRenderer>();
-        sprite.sprite = SkinManager._instance.GetSprite(playerSkin, playerTeam);
+        sprite.sprite = SkinManager._instance.GetSprite(playerSkin, playerTeam, isDead);
 
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.transform.tag == "Spike")
+        {
+            TriggerDeath();
+        }
     }
 }

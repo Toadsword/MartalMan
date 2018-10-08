@@ -6,6 +6,7 @@ TagManager:
   tags:
   - BlueBase
   - RedBase
+  - Spike
   layers:
   - Default
   - TransparentFX
@@ -40,6 +41,12 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 2924100031
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: UI
+    uniqueID: 1269230505
     locked: 0
