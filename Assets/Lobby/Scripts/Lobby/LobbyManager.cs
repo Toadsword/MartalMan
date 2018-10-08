@@ -142,6 +142,7 @@ namespace NetworkLobby
             }
         }
 
+        
         public void DisplayIsConnecting()
         {
             var _this = this;
@@ -178,7 +179,7 @@ namespace NetworkLobby
         public void SimpleBackClbk()
         {
             ChangeTo(mainMenuPanel);
-            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
+            GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
         }
                  
         public void StopHostClbk()
@@ -191,7 +192,7 @@ namespace NetworkLobby
             else
             {
                 StopHost();
-                GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
+                GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
             }
             
             ChangeTo(mainMenuPanel);
@@ -212,7 +213,7 @@ namespace NetworkLobby
         public void StopServerClbk()
         {
             StopServer();
-            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
+            GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
             ChangeTo(mainMenuPanel);
         }
 
@@ -402,9 +403,8 @@ namespace NetworkLobby
                 ChangeTo(lobbyPanel);
                 backDelegate = StopClientClbk;
                 SetServerInfo("Client", networkAddress);
+                GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
             }
-
-            GetComponent<LobbyNetworkDiscovery>().StopBroadcast();
         }
 
         public override void OnClientDisconnect(NetworkConnection conn)

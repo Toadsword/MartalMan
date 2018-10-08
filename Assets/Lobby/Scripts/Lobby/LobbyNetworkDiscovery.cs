@@ -28,9 +28,10 @@ namespace NetworkLobby
             UpdateMatchInfos();
         }
 
-        public void StopBroadcast()
+        public void StopGlobalBroadcast()
         {
-            base.StopBroadcast();
+            if(base.isClient || base.isServer)
+                base.StopBroadcast();
             lanAdresses.Clear();
         }
 

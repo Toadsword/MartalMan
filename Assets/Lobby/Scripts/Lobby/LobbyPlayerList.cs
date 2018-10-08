@@ -13,7 +13,6 @@ namespace NetworkLobby
 
         public RectTransform blueTeamListContentTransform;
         public RectTransform redTeamListContentTransform;
-        public GameObject warningDirectPlayServer;
         public Transform changeTeamButtonRowRed;
         public Transform changeTeamButtonRowBlue;
 
@@ -25,12 +24,6 @@ namespace NetworkLobby
             _instance = this;
             _layoutRed = redTeamListContentTransform.GetComponent<VerticalLayoutGroup>();
             _layoutBlue = blueTeamListContentTransform.GetComponent<VerticalLayoutGroup>();
-        }
-
-        public void DisplayDirectServerWarning(bool enabled)
-        {
-            if(warningDirectPlayServer != null)
-                warningDirectPlayServer.SetActive(enabled);
         }
 
         void Update()
