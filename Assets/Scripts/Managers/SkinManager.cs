@@ -51,7 +51,10 @@ public class SkinManager : MonoBehaviour {
 
     private void Awake()
     {
-        _instance = this;
+        if (_instance)
+            Destroy(gameObject);
+        else
+            _instance = this;
     }
 
     private void Start()

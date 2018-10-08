@@ -12,17 +12,13 @@ namespace NetworkLobby
         public RectTransform lobbyServerList;
         public RectTransform lobbyLanServerList;
         public RectTransform lobbyPanel;
-
-        public InputField ipInput;
+        
         public InputField matchNameInput;
 
         public void OnEnable()
         {
             lobbyManager.topPanel.ToggleVisibility(true);
-
-            ipInput.onEndEdit.RemoveAllListeners();
-            ipInput.onEndEdit.AddListener(onEndEditIP);
-
+            
             matchNameInput.onEndEdit.RemoveAllListeners();
             matchNameInput.onEndEdit.AddListener(onEndEditGameName);
         }
@@ -30,19 +26,6 @@ namespace NetworkLobby
         public void OnClickHost()
         {
             lobbyManager.StartHost();
-        }
-
-        public void OnClickJoin()
-        {
-            lobbyManager.ChangeTo(lobbyPanel);
-
-            lobbyManager.networkAddress = ipInput.text;
-            lobbyManager.StartClient();
-
-            lobbyManager.backDelegate = lobbyManager.StopClientClbk;
-            lobbyManager.DisplayIsConnecting();
-
-            lobbyManager.SetServerInfo("Connecting...", lobbyManager.networkAddress);
         }
 
         public void OnClickDedicated()
@@ -87,14 +70,6 @@ namespace NetworkLobby
             lobbyManager.ChangeTo(lobbyLanServerList);
         }
 
-        void onEndEditIP(string text)
-        {
-            if (Input.GetKeyDown(KeyCode.Return))
-            {
-                OnClickJoin();
-            }
-        }
-
         void onEndEditGameName(string text)
         {
             if (Input.GetKeyDown(KeyCode.Return))
@@ -102,6 +77,5 @@ namespace NetworkLobby
                 OnClickCreateMatchmakingGame();
             }
         }
-
     }
 }

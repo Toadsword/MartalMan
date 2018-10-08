@@ -39,6 +39,7 @@ namespace NetworkLobby
 
         public void AddPlayer(LobbyPlayer player)
         {
+            Debug.LogError("Ajout d'un joueur !");
             if (_players.Contains(player))
                 return;
 

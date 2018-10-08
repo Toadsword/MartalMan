@@ -9,7 +9,7 @@ namespace NetworkLobby
 {
     //Player entry in the lobby. Handle selecting color/setting name & getting ready for the game
     //Any LobbyHook can then grab it and pass those value to the game player prefab (see the Pong Example in the Samples Scenes)
-    public class LobbyPlayer : NetworkLobbyPlayer
+    public class LobbyPlayer : NetworkLobbyPlayer2
     {
         public enum PlayerTeam
         {
@@ -31,16 +31,13 @@ namespace NetworkLobby
         public GameObject remoteIcone;
 
         //OnMyName function will be invoked on clients when server change the value of playerName
-        [SyncVar(hook = "OnMyName")]
-        public string playerName = "";
+        [SyncVar(hook = "OnMyName")] public string playerName = "";
         /*
         [SyncVar(hook = "OnMyColor")]
         public Color playerColor = Color.white;
         */
-        [SyncVar(hook = "OnMyTeam")]
-        public PlayerTeam playerTeam = PlayerTeam.BLUE;
-        [SyncVar(hook = "OnMySkin")]
-        public SkinManager.SkinType playerSkin = SkinManager.SkinType.NORMAL;
+        [SyncVar(hook = "OnMyTeam")] public PlayerTeam playerTeam = PlayerTeam.BLUE;
+        [SyncVar(hook = "OnMySkin")] public SkinManager.SkinType playerSkin = SkinManager.SkinType.NORMAL;
 
         public Color OddRowColor = new Color(250.0f / 255.0f, 250.0f / 255.0f, 250.0f / 255.0f, 1.0f);
         public Color EvenRowColor = new Color(180.0f / 255.0f, 180.0f / 255.0f, 180.0f / 255.0f, 1.0f);

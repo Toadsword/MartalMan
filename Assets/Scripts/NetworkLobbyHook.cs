@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 using NetworkLobby;
 
 public class NetworkLobbyHook : LobbyHook {
-
+    
 	public override void OnLobbyServerSceneLoadedForPlayer(NetworkManager manager,
         GameObject lobbyPlayer, GameObject gamePlayer)
     {
@@ -17,5 +17,7 @@ public class NetworkLobbyHook : LobbyHook {
         localPlayer.playerTeam = lobby.playerTeam;
 
         localPlayer.playerSkin = lobby.playerSkin;
+
+        localPlayer.playerId = 1;
     }
 }

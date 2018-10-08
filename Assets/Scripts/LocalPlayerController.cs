@@ -7,7 +7,6 @@ using NetworkLobby;
 public class LocalPlayerController : NetworkBehaviour
 {
     [Header("Player")]
-    [SerializeField] [SyncVar] public short playerId;
     [SerializeField] float speed = 9.0f;
     [SerializeField] float speedAcc = 2.0f;
     [SerializeField] float jumpHeight = 5.0f;
@@ -33,6 +32,7 @@ public class LocalPlayerController : NetworkBehaviour
     float propelTimer = 0.0f;
 
     [Header("Network Infos")]
+    [SerializeField] [SyncVar] public short playerId;
     [SyncVar(hook = "OnChangeName")] public string playerName = "...";
     [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam playerTeam;
     [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType playerSkin;
@@ -55,7 +55,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
-    float horizontal, lastHoriDirection;
+    float horizontal, lastHoriDirection, lastRotation;
     bool jump, isHit, grounded;
     Color baseColor = Color.white;
     Vector2 slamDirection, oldSlamDirection, hammerDirection;
@@ -68,6 +68,7 @@ public class LocalPlayerController : NetworkBehaviour
         hammerState = HammerSteps.IDLE;
         jump = false;
         isHit = false;
+        lastRotation = 0.0f;
 
         currentHealth = maxHealth;
 
@@ -112,12 +113,11 @@ public class LocalPlayerController : NetworkBehaviour
             {
                 slamDirection = Vector2.up;
             }
-            else // Right/Left attack, depending on lastHorizontal
+            else
             {
-                if (direction.x < 0.0f)
-                    slamDirection = Vector2.right;
-                else
-                    slamDirection = Vector2.left;
+                slamDirection = direction.x > 0.0f ? Vector2.left : Vector2.right;
+                if(Mathf.Approximately(lastRotation, 180.0f))
+                    slamDirection = slamDirection == Vector2.left ? Vector2.right : Vector2.left;
             }
 
             if(hammerState == HammerSteps.IDLE)
@@ -147,6 +147,16 @@ public class LocalPlayerController : NetworkBehaviour
         if (rigid.velocity.x > speed || rigid.velocity.x < -speed)
         {
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
+        }
+
+        if (Mathf.Abs(rigid.velocity.x) > 0.1f)
+        {
+            float angle = rigid.velocity.x <= 0.0f ? 180.0f : 0.0f;
+            if (!Mathf.Approximately(angle, lastRotation))
+            {
+                lastRotation = angle;
+                transform.rotation = Quaternion.Euler(0.0f, angle, 0.0f);
+            }
         }
 
         if (!isLocalPlayer)
@@ -202,7 +212,6 @@ public class LocalPlayerController : NetworkBehaviour
                 if (Utility.IsOver(propelTimer))
                 {
                     hammerState = HammerSteps.SLAMMING;
-                    propellingObj.GetComponent<SpriteRenderer>().color = Color.blue;
                 }
                 else
                 {
@@ -212,7 +221,6 @@ public class LocalPlayerController : NetworkBehaviour
                 break;
             case HammerSteps.SLAMMING:
                 hammerState = HammerSteps.RETURNING;
-                propellingObj.GetComponent<SpriteRenderer>().color = Color.green;
                 if (isServer)
                 {
                     List<GameObject> players = propellingObj.GetComponent<PropellingBehavior>().GetTouchingPlayers();
@@ -418,7 +426,6 @@ public class LocalPlayerController : NetworkBehaviour
     #region SyncVarsTriggers
     private void OnChangeName(string newName)
     {
-        Debug.Log("CHANGE NAME FOR PLAYER " + playerName);
         //Change le nom au dessus du joueur avec la nouvelle entrée
     }
 
@@ -426,13 +433,11 @@ public class LocalPlayerController : NetworkBehaviour
     {
         UpdateSkin();
         UpdateSpawnPosition();
-        Debug.Log("CHANGE TEAM FOR PLAYER " + playerName);
     }
 
     private void OnChangeSkin(SkinManager.SkinType newType)
     {
         UpdateSkin();
-        Debug.Log("CHANGE SKIN FOR PLAYER " + playerName);
     }
     #endregion
 

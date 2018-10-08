@@ -351,10 +351,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4713d410f02dc94ca802008257f2651, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerId: 0
   speed: 9
   speedAcc: 2
-  jumpHeight: 5
+  jumpHeight: 4
   feetPosition: {x: 0, y: -0.6}
   groundSize: {x: 0.9, y: 0.1}
   groundLayer:
@@ -392,9 +391,10 @@ MonoBehaviour:
     m_RotationOrder: 4
   hammerSize: {x: 0.5, y: 0.5}
   timeBeforePropelling: 0.1
+  playerId: 0
   playerName: '...'
-  team: 0
-  syncPosRate: 10
+  playerTeam: 0
+  playerSkin: 0
   rigid: {fileID: 0}
 --- !u!114 &114645859411124326
 MonoBehaviour:

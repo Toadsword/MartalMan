@@ -8,7 +8,7 @@ using System.Collections;
 
 namespace NetworkLobby
 {
-    public class LobbyManager : NetworkLobbyManager 
+    public class LobbyManager : NetworkLobbyManager2
     {
         static short MsgKicked = MsgType.Highest + 1;
 
