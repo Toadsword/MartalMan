@@ -64,7 +64,7 @@ namespace NetworkLobby
             lobbyManager.DisplayIsConnecting();
 
             lobbyManager.SetServerInfo("Connecting...", lobbyManager.networkAddress);
-            lobbyManager.GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
+            //lobbyManager.GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
         }
     }
 }

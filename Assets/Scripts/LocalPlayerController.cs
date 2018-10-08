@@ -34,8 +34,8 @@ public class LocalPlayerController : NetworkBehaviour
 
     [Header("Network Infos")]
     [SyncVar(hook = "OnChangeName")] public string playerName = "...";
-    [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam team;
-    [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType skin;
+    [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam playerTeam;
+    [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType playerSkin;
 
     enum HammerSteps
     {
@@ -73,30 +73,14 @@ public class LocalPlayerController : NetworkBehaviour
 
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
-        spawnPosition = GameObject.FindGameObjectWithTag("RedBase").transform.position;
-        if (isLocalPlayer)
-            Camera.main.GetComponent<CameraBehavior>().player = gameObject;
-    }
-
-    public void SetupBeginGame()
-    {
-        jump = false;
-        isHit = false;
-        lastHoriDirection = 1.0f;
-        hammerState = HammerSteps.IDLE;
-
-        currentHealth = maxHealth;
-
-        rigid = GetComponent<Rigidbody2D>();
-        sprite = GetComponent<SpriteRenderer>();
+        UpdateSpawnPosition();
 
         if (isLocalPlayer)
             Camera.main.GetComponent<CameraBehavior>().player = gameObject;
-        /*
-        OnChangeName(name);
-        OnChangeTeam(team);
-        OnChangeSkin(skin);
-        */
+
+        OnChangeName(playerName);
+        OnChangeTeam(playerTeam);
+        OnChangeSkin(playerSkin);
     }
 
     // Update is called once per frame // USED FOR INPUTS
@@ -434,25 +418,38 @@ public class LocalPlayerController : NetworkBehaviour
     #region SyncVarsTriggers
     private void OnChangeName(string newName)
     {
-        name = newName;
+        Debug.Log("CHANGE NAME FOR PLAYER " + playerName);
         //Change le nom au dessus du joueur avec la nouvelle entrée
     }
 
     private void OnChangeTeam(LobbyPlayer.PlayerTeam newTeam)
     {
-        team = newTeam;
-        sprite.sprite = SkinManager._instance.GetSprite(skin, team);
-        if(team == LobbyPlayer.PlayerTeam.BLUE)
+        UpdateSkin();
+        UpdateSpawnPosition();
+        Debug.Log("CHANGE TEAM FOR PLAYER " + playerName);
+    }
+
+    private void OnChangeSkin(SkinManager.SkinType newType)
+    {
+        UpdateSkin();
+        Debug.Log("CHANGE SKIN FOR PLAYER " + playerName);
+    }
+    #endregion
+
+    private void UpdateSpawnPosition()
+    {
+        if (playerTeam == LobbyPlayer.PlayerTeam.BLUE)
             spawnPosition = GameObject.FindGameObjectWithTag("BlueBase").transform.Find("PlayerSpawn").position;
         else
             spawnPosition = GameObject.FindGameObjectWithTag("RedBase").transform.Find("PlayerSpawn").position;
         transform.position = spawnPosition;
     }
 
-    private void OnChangeSkin(SkinManager.SkinType newType)
+    private void UpdateSkin()
     {
-        skin = newType;
-        sprite.sprite = SkinManager._instance.GetSprite(skin, team);
+        if (!sprite)
+            sprite = GetComponent<SpriteRenderer>();
+        sprite.sprite = SkinManager._instance.GetSprite(playerSkin, playerTeam);
+
     }
-    #endregion
 }

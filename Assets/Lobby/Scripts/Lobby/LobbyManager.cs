@@ -403,7 +403,7 @@ namespace NetworkLobby
                 ChangeTo(lobbyPanel);
                 backDelegate = StopClientClbk;
                 SetServerInfo("Client", networkAddress);
-                GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
+                //GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
             }
         }
 

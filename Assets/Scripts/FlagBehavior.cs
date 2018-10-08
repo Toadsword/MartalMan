@@ -93,7 +93,7 @@ public class FlagBehavior : NetworkBehaviour
 
         if(collision.tag == "Player" && !isTaken)
         {
-            if(team != collision.GetComponent<LocalPlayerController>().team)
+            if(team != collision.GetComponent<LocalPlayerController>().playerTeam)
             {
                 player = collision.GetComponent<LocalPlayerController>();
                 if(player.flag == null)
