@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,7 +41,7 @@ public class LocalPlayerController : NetworkBehaviour
     float propelTimer = 0.0f;
 
     [Header("Network Infos")]
-    [SerializeField] [SyncVar] public short playerId;
+    [SyncVar] public short playerId;
     [SyncVar(hook = "OnChangeName")] public string playerName = "...";
     [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam playerTeam;
     [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType playerSkin;
@@ -64,7 +65,8 @@ public class LocalPlayerController : NetworkBehaviour
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
     float horizontal, lastHoriDirection, lastRotation;
-    bool jump, isHit, grounded, isDead;
+    bool jump, isHit, grounded;
+    public bool isDead;
     Color baseColor = Color.white;
     Vector2 slamDirection, oldSlamDirection, hammerDirection;
     Vector2 spawnPosition;
@@ -92,7 +94,7 @@ public class LocalPlayerController : NetworkBehaviour
         OnChangeSkin(playerSkin);
     }
 
-    // Update is called once per frame // USED FOR INPUTS
+    // USED FOR INPUTS AND ANIMATION
     void Update () {
         if (!isLocalPlayer || isDead)
             return;
@@ -102,6 +104,12 @@ public class LocalPlayerController : NetworkBehaviour
 
         if (!Mathf.Approximately(horizontal, 0.0f))
             lastHoriDirection = horizontal;
+
+        if(Mathf.Abs(rigid.velocity.x) > 0.1f)
+        {
+            sprite.flipX = rigid.velocity.x < 0.0f;
+            propellingObj.GetComponent<SpriteRenderer>().flipX = rigid.velocity.x < 0.0f;
+        }
 
         //In air
         if (GameInput.GetInputDown(GameInput.InputType.JUMP) && grounded)
@@ -121,14 +129,15 @@ public class LocalPlayerController : NetworkBehaviour
             {
                 slamDirection = Vector2.up;
             }
-            else
+            else // Right/Left attack, depending on lastHorizontal
             {
-                slamDirection = direction.x > 0.0f ? Vector2.left : Vector2.right;
-                if(Mathf.Approximately(lastRotation, 180.0f))
-                    slamDirection = slamDirection == Vector2.left ? Vector2.right : Vector2.left;
+                if (direction.x < 0.0f)
+                    slamDirection = Vector2.right;
+                else
+                    slamDirection = Vector2.left;
             }
 
-            if(hammerState == HammerSteps.IDLE)
+            if (hammerState == HammerSteps.IDLE)
             {
                 oldSlamDirection = slamDirection;
                 StartHammering();
@@ -157,32 +166,21 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
         }
 
-        if (Mathf.Abs(rigid.velocity.x) > 0.1f)
+        if (isDead)
         {
-            float angle = rigid.velocity.x <= 0.0f ? 180.0f : 0.0f;
-            if (!Mathf.Approximately(angle, lastRotation))
+            if (Utility.IsOver(respawnTimer))
             {
-                lastRotation = angle;
-                transform.rotation = Quaternion.Euler(0.0f, angle, 0.0f);
+                if (isServer)
+                    RpcRespawn();
             }
+            else
+                return;
         }
 
         if (!isLocalPlayer)
             return;
 
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-
-        if (isDead)
-        {
-            if (Utility.IsOver(respawnTimer))
-            {
-                Respawn();
-            }
-            else
-            {
-                return;
-            }
-        }
 
         if (Mathf.Abs(horizontal) > 0.01)
         {
@@ -245,20 +243,14 @@ public class LocalPlayerController : NetworkBehaviour
                 {
                     List<GameObject> players = propellingObj.GetComponent<PropellingBehavior>().GetTouchingPlayers();
 
-                    Vector2 direction = slamDirection;
+                    // To propell the player a bit in height.
+                    if (Mathf.Approximately(hammerDirection.y, 0.0f))
+                        hammerDirection.y = 0.3f;
 
-                    // Pour empecher le fait de slam dans la direction opposé une fois que le marteau arrive à sa destination
-                    if (Mathf.Approximately(slamDirection.x - hammerDirection.x, 0.0f) || 
-                        (Mathf.Approximately(direction.x, 0.0f) && Mathf.Approximately(direction.y, 0.0f))) 
-                        direction = hammerDirection;
-
-                    //Pour le propulser un poil en l'air
-                    if (Mathf.Approximately(direction.y, 0.0f))
-                        direction.y = 0.3f;
-
+                    // Propell all the players touched
                     foreach (GameObject player in players)
                     {
-                        player.GetComponent<LocalPlayerController>().CmdGetHit(direction * force);
+                        player.GetComponent<LocalPlayerController>().CmdGetHit(hammerDirection * force);
                     }
                 }
                 propelTimer = Utility.StartTimer(timeBeforePropelling);
@@ -344,21 +336,11 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     public void RpcGetHit(Vector2 force)
     {
+        // Can't get hit while invincible
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
-
             ApplyForce(force);
-            /*
-            if(isLocalPlayer)
-            {
-                currentHealth--;
-                if(currentHealth <= 0)
-                {
-                    TriggerDeath();
-                }
-            }
-            */
         }
     }
     
@@ -371,6 +353,7 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcApplyForce(Vector2 force)
     {
+        //Already applied in ApplyForce(), in local
         if(!isLocalPlayer)
             rigid.AddForce(force);
     }
@@ -428,17 +411,20 @@ public class LocalPlayerController : NetworkBehaviour
             sprite.color = baseColor;
         }
     }
-    
-    private void TriggerDeath()
+
+    [ClientRpc]
+    private void RpcTriggerDeath()
     {
-        gameObject.layer = LayerMask.NameToLayer("Default");
+        gameObject.layer = LayerMask.NameToLayer("DeadPlayer");
         isDead = true;
         respawnTimer = Utility.StartTimer(timeToRespawn);
         UpdateSkin();
-        CmdDropFlag();
+        if(flag)
+            CmdDropFlag();
     }
 
-    private void Respawn()
+    [ClientRpc]
+    private void RpcRespawn()
     {
         gameObject.layer = LayerMask.NameToLayer("Player");
         isDead = false;
@@ -449,7 +435,7 @@ public class LocalPlayerController : NetworkBehaviour
     [Command]
     private void CmdDropFlag()
     {
-        if(flag != null)
+        if (flag != null)
         {
             flag.RpcDropFlag();
             flag = null;
@@ -489,14 +475,13 @@ public class LocalPlayerController : NetworkBehaviour
         if (!sprite)
             sprite = GetComponent<SpriteRenderer>();
         sprite.sprite = SkinManager._instance.GetSprite(playerSkin, playerTeam, isDead);
-
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.transform.tag == "Spike")
+        if (collision.transform.tag == "Spike" && isServer)
         {
-            TriggerDeath();
+            RpcTriggerDeath();
         }
     }
 }

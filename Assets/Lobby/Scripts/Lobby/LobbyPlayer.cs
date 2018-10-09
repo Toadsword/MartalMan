@@ -16,11 +16,7 @@ namespace NetworkLobby
             RED,
             BLUE
         }
-
-        static Color[] Colors = new Color[] { Color.magenta, Color.red, Color.cyan, Color.blue, Color.green, Color.yellow };
-        //used on server to avoid assigning the same color to two player
-        static List<int> _colorInUse = new List<int>();
-
+        
         public Button skinButton;
         public InputField nameInput;
         public Button readyButton;
@@ -38,6 +34,7 @@ namespace NetworkLobby
         */
         [SyncVar(hook = "OnMyTeam")] public PlayerTeam playerTeam = PlayerTeam.BLUE;
         [SyncVar(hook = "OnMySkin")] public SkinManager.SkinType playerSkin = SkinManager.SkinType.NORMAL;
+        [SyncVar] public short playerId;
 
         public Color OddRowColor = new Color(250.0f / 255.0f, 250.0f / 255.0f, 250.0f / 255.0f, 1.0f);
         public Color EvenRowColor = new Color(180.0f / 255.0f, 180.0f / 255.0f, 180.0f / 255.0f, 1.0f);
@@ -170,7 +167,7 @@ namespace NetworkLobby
                 ChangeReadyButtonColor(TransparentColor);
 
                 Text textComponent = readyButton.transform.GetChild(0).GetComponent<Text>();
-                textComponent.text = "READY";
+                textComponent.text = "READY!!";
                 textComponent.color = ReadyColor;
                 readyButton.interactable = false;
                 skinButton.interactable = false;
@@ -181,7 +178,7 @@ namespace NetworkLobby
                 ChangeReadyButtonColor(isLocalPlayer ? JoinColor : NotReadyColor);
 
                 Text textComponent = readyButton.transform.GetChild(0).GetComponent<Text>();
-                textComponent.text = isLocalPlayer ? "JOIN" : "...";
+                textComponent.text = isLocalPlayer ? "READY?" : "not ready..";
                 textComponent.color = Color.white;
                 readyButton.interactable = isLocalPlayer;
                 skinButton.interactable = isLocalPlayer;

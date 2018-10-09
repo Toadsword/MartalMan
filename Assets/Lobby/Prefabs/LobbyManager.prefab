@@ -1792,7 +1792,6 @@ MonoBehaviour:
   lobbyServerList: {fileID: 224911047483066180}
   lobbyLanServerList: {fileID: 22488586}
   lobbyPanel: {fileID: 22443498}
-  ipInput: {fileID: 0}
   matchNameInput: {fileID: 11484364}
 --- !u!114 &11439030
 MonoBehaviour:
@@ -2446,9 +2445,9 @@ MonoBehaviour:
     m_MaxNetSimulatorTimeout: 12000
   m_Channels: 0500000000000000
   m_UseWebSockets: 0
-  m_UseSimulator: 0
-  m_SimulatedLatency: 1
-  m_PacketLossPercentage: 0
+  m_UseSimulator: 1
+  m_SimulatedLatency: 50
+  m_PacketLossPercentage: 20
   m_MaxBufferedPackets: 16
   m_AllowFragmentation: 1
   m_MatchHost: mm.unet.unity3d.com

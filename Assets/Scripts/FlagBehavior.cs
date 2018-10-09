@@ -8,8 +8,6 @@ using NetworkLobby;
 public class FlagBehavior : NetworkBehaviour
 {
     [Header("Network")]
-    [SerializeField] [Range(1, 30)] float syncPosRate = 5;
-    float lastSyncTimer = 0.0f;
     [SerializeField] LobbyPlayer.PlayerTeam team;
     [SerializeField] Transform teamBase;
 
@@ -70,7 +68,7 @@ public class FlagBehavior : NetworkBehaviour
 
     private void UpdatePositionNetwork()
     {
-        if (!isTaken && rigid.velocity.x != 0.0f && rigid.velocity.y != 0.0f)
+        if (!isTaken && !Mathf.Approximately(rigid.velocity.x, 0.0f) && !Mathf.Approximately(rigid.velocity.y, 0.0f))
         {
             RpcUpdateNetwork(transform.position, rigid.velocity);
         }
@@ -93,12 +91,16 @@ public class FlagBehavior : NetworkBehaviour
 
         if(collision.tag == "Player" && !isTaken)
         {
-            if(team != collision.GetComponent<LocalPlayerController>().playerTeam)
+            LocalPlayerController pPlayer = collision.GetComponent<LocalPlayerController>();
+            if (pPlayer.isDead)
+                return;
+
+            if (team != pPlayer.playerTeam)
             {
-                player = collision.GetComponent<LocalPlayerController>();
-                if(player.flag == null)
+                if(pPlayer.flag == null)
                 {
-                    RpcTakeFlag(player.playerId);
+                    player = pPlayer;
+                    RpcTakeFlag(pPlayer.playerId);
                 }
             }
             else
@@ -112,6 +114,7 @@ public class FlagBehavior : NetworkBehaviour
         else if (collision.tag == "RedBase" && team == LobbyPlayer.PlayerTeam.BLUE ||
             collision.tag == "BlueBase" && team == LobbyPlayer.PlayerTeam.RED)
         {
+            Debug.LogError(team + " TEAM WIN !");
             // ServerManagement._instance.TeamWin(team);
         }
     }
@@ -128,8 +131,16 @@ public class FlagBehavior : NetworkBehaviour
     public void RpcTakeFlag(short playerId)
     {
         // TODO : UPDATE LE FAIT DE POUVOIR CHOPPER LE PLAYER FACILEMENT
-        //ServerManagement._instance.UpdateCurrentPlayers();
-        //player = ServerManagement._instance.GetPlayerObjFromId(playerId);
+        LocalPlayerController[] listPlayers = GameObject.FindObjectsOfType<LocalPlayerController>();
+        foreach (var pPlayer in listPlayers)
+        {
+            if(pPlayer.playerId == playerId)
+            {
+                player = pPlayer;
+                break;
+            }
+        }
+
         if (!player)
             return;
 

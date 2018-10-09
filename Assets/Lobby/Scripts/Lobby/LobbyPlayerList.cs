@@ -19,6 +19,8 @@ namespace NetworkLobby
         protected VerticalLayoutGroup _layoutRed, _layoutBlue;
         protected List<LobbyPlayer> _players = new List<LobbyPlayer>();
 
+        private short nextPlayerId = 0;
+
         public void OnEnable()
         {
             _instance = this;
@@ -39,7 +41,6 @@ namespace NetworkLobby
 
         public void AddPlayer(LobbyPlayer player)
         {
-            Debug.LogError("Ajout d'un joueur !");
             if (_players.Contains(player))
                 return;
 
@@ -56,8 +57,7 @@ namespace NetworkLobby
                     moreInRed--;
                 }
             }
-
-            Debug.Log(moreInRed);
+            
             if(moreInRed >= 0)
                 player.playerTeam = LobbyPlayer.PlayerTeam.BLUE;
             else
@@ -68,6 +68,8 @@ namespace NetworkLobby
             else
                 player.transform.SetParent(redTeamListContentTransform, false);
 
+            player.playerId = nextPlayerId;
+            nextPlayerId++;
             _players.Add(player);
 
             changeTeamButtonRowRed.SetAsLastSibling();
