@@ -19,5 +19,7 @@ public class NetworkLobbyHook : LobbyHook {
         localPlayer.playerSkin = lobby.playerSkin;
 
         localPlayer.playerId = lobby.playerId;
+
+        localPlayer.conn = lobby.connectionToClient;
     }
 }

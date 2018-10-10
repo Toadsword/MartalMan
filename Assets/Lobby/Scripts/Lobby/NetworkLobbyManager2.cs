@@ -271,7 +271,7 @@ namespace UnityEngine.Networking
 //			}
 //
 //			base.OnServerConnect(conn);
-//			OnLobbyServerConnect(conn);
+			OnLobbyServerConnect(conn);
 		}
 
 		public override void OnServerDisconnect(NetworkConnection conn)

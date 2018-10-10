@@ -40,6 +40,7 @@ public class LocalPlayerController : NetworkBehaviour
     [SyncVar(hook = "OnChangeName")] public string playerName = "...";
     [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam playerTeam;
     [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType playerSkin;
+    public NetworkConnection conn;
 
     enum HammerSteps
     {
@@ -162,33 +163,30 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
         }
 
-        if (!isLocalPlayer)
-            return;
-
         if (isDead)
         {
             if (Utility.IsOver(timerRespawn))
             {
-                GameManager._instance.UpdateRespawnText("");
+                if (isLocalPlayer) GameManager._instance.UpdateRespawnText("");
                 if (isServer)
                     RpcRespawn();
             }
             else
             {
-                GameManager._instance.UpdateRespawnText("Respawning in " + Mathf.Round(Utility.GetTimerRemainingTime(timerRespawn)) + " seconds.");
-                return;
+                if(isLocalPlayer) GameManager._instance.UpdateRespawnText("Respawning in " + Mathf.Round(Utility.GetTimerRemainingTime(timerRespawn)) + " seconds.");
             }
         }
 
+        if (!isLocalPlayer)
+            return;
 
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
-
         if (Mathf.Abs(horizontal) > 0.01)
         {
             Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
             ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true);
 
-            if(Utility.IsOver(timerWalk))
+            if (Utility.IsOver(timerWalk))
             {
                 timerWalk = Utility.StartTimer(timeBetweenWalkSound);
                 SoundManager._instance.PlaySound(SoundManager.SoundList.WALK);
@@ -371,39 +369,46 @@ public class LocalPlayerController : NetworkBehaviour
 
     private void UpdatePlayerNetwork(NetworkUpdtMethod method)
     {
-        if(method == NetworkUpdtMethod.SYNC_BOTH)
+        //int time = NetworkTransport.GetNetworkTimestamp();
+        if (method == NetworkUpdtMethod.SYNC_BOTH)
         {
-            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_POS, transform.position);
-            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_VEL, rigid.velocity);
+            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_VEL, rigid.velocity/*, time*/);
+            CmdUpdatePlayer(NetworkUpdtMethod.SYNC_POS, transform.position/*, time*/);
         }
         else
         {
             if(method == NetworkUpdtMethod.SYNC_POS)
-                CmdUpdatePlayer(method, transform.position);
+                CmdUpdatePlayer(method, transform.position/*, time*/);
             else
-                CmdUpdatePlayer(method, rigid.velocity);
+                CmdUpdatePlayer(method, rigid.velocity/*, time*/);
         }
     }
 
     [Command]
-    private void CmdUpdatePlayer(NetworkUpdtMethod method, Vector2 value)
+    private void CmdUpdatePlayer(NetworkUpdtMethod method, Vector2 value/*, int time*/)
     {
         if (isServer)
-            RpcUpdatePlayer(method, value);
+        {
+            RpcUpdatePlayer(method, value/*, time*/);
+        }
     }
 
     [ClientRpc]
-    private void RpcUpdatePlayer(NetworkUpdtMethod method, Vector2 value)
+    private void RpcUpdatePlayer(NetworkUpdtMethod method, Vector2 value/*, int time*/)
     {
+        //Add interpolation of players and speed considering the time it took for the network to arrive here
+        //byte e;
+        //int delay = NetworkTransport.GetRemoteDelayTimeMS(conn.hostId, conn.connectionId, time, out e);
+
         if (!isLocalPlayer)
         {
             if (!rigid)
                 rigid = GetComponent<Rigidbody2D>();
 
             if (method == NetworkUpdtMethod.SYNC_POS)
-                transform.position = value;
+                transform.position = /*rigid.velocity * (float)delay +*/ value;
             else if(method == NetworkUpdtMethod.SYNC_VEL)
-                rigid.velocity = value;
+                rigid.velocity = /*Physics2D.gravity * (float)delay +*/ value;
         }
     }
     #endregion
@@ -490,7 +495,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.transform.tag == "Spike" && isServer)
+        if (collision.transform.tag == "Spike" && isServer && !isDead)
         {
             RpcTriggerDeath();
         }

@@ -53,12 +53,12 @@ public class GameManager : MonoBehaviour {
         if (localPlayer.playerTeam == teamLost)
         {
             SoundManager._instance.PlaySound(SoundManager.SoundList.LOSE_SOUND);
-            UpdateInfoText("Your team win the game !");
+            UpdateInfoText("Your team loses the game..");
         }
         else
         {
             SoundManager._instance.PlaySound(SoundManager.SoundList.WIN_SOUND);
-            UpdateInfoText("Your team lost the game...");
+            UpdateInfoText("Your team wins the game !");
         }
     }
 
