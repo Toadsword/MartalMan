@@ -17,6 +17,7 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] LayerMask groundLayer;
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
+    [SerializeField] float invulnerabilityTimeRespawn = 1.0f;
     [SerializeField] float timeToRespawn = 5.0f;
     float timerRespawn = 0.0f;
     [SerializeField] float timeBetweenWalkSound = 0.3f;
@@ -167,7 +168,6 @@ public class LocalPlayerController : NetworkBehaviour
         {
             if (Utility.IsOver(timerRespawn))
             {
-                if (isLocalPlayer) GameManager._instance.UpdateRespawnText("");
                 if (isServer)
                     RpcRespawn();
             }
@@ -175,6 +175,7 @@ public class LocalPlayerController : NetworkBehaviour
             {
                 if(isLocalPlayer) GameManager._instance.UpdateRespawnText("Respawning in " + Mathf.Round(Utility.GetTimerRemainingTime(timerRespawn)) + " seconds.");
             }
+            return;
         }
 
         if (!isLocalPlayer)
@@ -427,10 +428,14 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcRespawn()
     {
+        if (isLocalPlayer)
+            GameManager._instance.UpdateRespawnText("");
+
         transform.position = spawnPosition;
         isDead = false;
         UpdateSkin();
         gameObject.layer = LayerMask.NameToLayer("Player");
+        timerInvincibility = Utility.StartTimer(invulnerabilityTimeRespawn);
     }
 
     [Command]
@@ -495,7 +500,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.transform.tag == "Spike" && isServer && !isDead)
+        if (collision.transform.tag == "Spike" && isServer && !isDead && Utility.IsOver(timerInvincibility))
         {
             RpcTriggerDeath();
         }

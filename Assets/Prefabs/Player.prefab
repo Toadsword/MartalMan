@@ -450,6 +450,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 768
   invincibilityTime: 0.7
+  invulnerabilityTimeRespawn: 1
   timeToRespawn: 5
   timeBetweenWalkSound: 0.3
   nameText: {fileID: 114206342517023504}
@@ -620,7 +621,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 6
   m_Sprite: {fileID: 21300000, guid: 54a3a8483bd10f04688a03f139374133, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
