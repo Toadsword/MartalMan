@@ -163,7 +163,12 @@ public class FlagBehavior : NetworkBehaviour
         if (!player)
             return;
 
-        SoundManager._instance.PlaySound(SoundManager.SoundList.TAKE_FLAG);
+        if (isInBase)
+        {
+            SoundManager._instance.PlaySound(SoundManager.SoundList.TAKE_FLAG);
+            GameManager._instance.UpdateInfoText("The " + team + " flag has been taken !");
+        }
+
         player.flag = this;
         isTaken = true;
         isInBase = false;
@@ -179,6 +184,7 @@ public class FlagBehavior : NetworkBehaviour
         isTaken = false;
 
         SoundManager._instance.PlaySound(SoundManager.SoundList.FLAG_BACK);
+        GameManager._instance.UpdateInfoText("The " + team + " has returned !");
         transform.position = teamBase.position;
         ChangeBodyType(false);
     }

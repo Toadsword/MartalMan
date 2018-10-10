@@ -60,7 +60,7 @@ public class LocalPlayerController : NetworkBehaviour
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
     float horizontal;
-    bool jump, isHit, grounded;
+    bool jump, grounded;
     public bool isDead;
     Color baseColor = Color.white;
     Vector2 slamDirection, oldSlamDirection, hammerDirection;
@@ -75,7 +75,6 @@ public class LocalPlayerController : NetworkBehaviour
     {
         hammerState = HammerSteps.IDLE;
         jump = false;
-        isHit = false;
 
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
@@ -163,19 +162,24 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
         }
 
+        if (!isLocalPlayer)
+            return;
+
         if (isDead)
         {
             if (Utility.IsOver(timerRespawn))
             {
+                GameManager._instance.UpdateRespawnText("");
                 if (isServer)
                     RpcRespawn();
             }
             else
+            {
+                GameManager._instance.UpdateRespawnText("Respawning in " + Mathf.Round(Utility.GetTimerRemainingTime(timerRespawn)) + " seconds.");
                 return;
+            }
         }
 
-        if (!isLocalPlayer)
-            return;
 
         UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
 
@@ -313,6 +317,7 @@ public class LocalPlayerController : NetworkBehaviour
         if (doNetwork)
             CmdApplyForce(force);
     }
+
     private void ApplyJumpForce(float height)
     {
         float jumpForce = Mathf.Sqrt(Mathf.Abs(2.0f * Physics2D.gravity.y * height));
@@ -403,21 +408,6 @@ public class LocalPlayerController : NetworkBehaviour
     }
     #endregion
 
-    private void InvicibilityAnimation()
-    {
-        if(!Utility.IsOver(timerInvincibility))
-        {
-            if (sprite.color == baseColor)
-                sprite.color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-            else
-                sprite.color = baseColor;
-        }
-        else
-        {
-            sprite.color = baseColor;
-        }
-    }
-
     [ClientRpc]
     private void RpcTriggerDeath()
     {
@@ -432,10 +422,10 @@ public class LocalPlayerController : NetworkBehaviour
     [ClientRpc]
     private void RpcRespawn()
     {
-        gameObject.layer = LayerMask.NameToLayer("Player");
-        isDead = false;
         transform.position = spawnPosition;
+        isDead = false;
         UpdateSkin();
+        gameObject.layer = LayerMask.NameToLayer("Player");
     }
 
     [Command]
@@ -481,6 +471,21 @@ public class LocalPlayerController : NetworkBehaviour
         if (!sprite)
             sprite = GetComponent<SpriteRenderer>();
         sprite.sprite = SkinManager._instance.GetSprite(playerSkin, playerTeam, isDead);
+    }
+
+    private void InvicibilityAnimation()
+    {
+        if (!Utility.IsOver(timerInvincibility))
+        {
+            if (sprite.color == baseColor)
+                sprite.color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+            else
+                sprite.color = baseColor;
+        }
+        else
+        {
+            sprite.color = baseColor;
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

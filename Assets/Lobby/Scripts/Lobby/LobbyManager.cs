@@ -124,7 +124,7 @@ namespace NetworkLobby
 
             Debug.Log("Client disconnected from server: " + conn);
             //Afficher panel avec timeout
-            DisplayTimeout();
+            infoPanel.Display("Disconnected from server : Server closed", "Close", null);
         }
 
         public void ChangeTo(RectTransform newPanel)
@@ -158,12 +158,6 @@ namespace NetworkLobby
         {
             var _this = this;
             infoPanel.Display("Connecting...", "Cancel", () => { _this.backDelegate(); });
-        }
-
-        public void DisplayTimeout()
-        {
-            var _this = this;
-            infoPanel.Display("Disconnected from server : Timeout", "Cancel", () => { _this.backDelegate(); });
         }
 
         public void SetServerInfo(string status, string host)

@@ -7941,11 +7941,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   localPlayer: {fileID: 0}
-  gamePaused: 0
-  menuBtns: []
-  selectedIndex: 0
-  isInMenu: 0
-  pauseCanvas: {fileID: 0}
+  infoText: {fileID: 0}
+  respawnText: {fileID: 0}
+  timeDisplayInfoText: 3
 --- !u!4 &1703422436
 Transform:
   m_ObjectHideFlags: 0
