@@ -12,28 +12,13 @@ public class SoundManager : MonoBehaviour
     public enum SoundList
     {
         WALK,
-        DEATH,
-        MENU_SELECTION,
-        MENU_VALIDATION,
-        JUMPING,
-        LANDING,
-        BUTTON_ACTIVATION,
-        BUTTON_DESACTIVATION,
-        CASCADE,
-        WIND,
-        TOTEM_ACTIVATION,
-        DOOR_SOUND
-    }
-
-    public enum MusicList
-    {
-        NONE,
-        MENU,
-        CAVE,
-        FINAL,
-        JOY,
-        ELECTRIC_WORLD,
-        STRANGE_MUSIC
+        PUNCH,
+        IS_HIT,
+        HAND_MOVEMENT,
+        WIN_SOUND,
+        LOSE_SOUND,
+        TAKE_FLAG,
+        FLAG_BACK
     }
 
     public struct LoopedSound
@@ -43,39 +28,37 @@ public class SoundManager : MonoBehaviour
     }
     List<LoopedSound> loopedSoundList = new List<LoopedSound>();
 
-    MusicList currentMusicPlaying = MusicList.NONE;
-
     List<AudioClip> listWalkSounds = new List<AudioClip>();
-    List<AudioClip> listDemonNoiseSounds = new List<AudioClip>();
+    List<AudioClip> listPunchSounds = new List<AudioClip>();
+    List<AudioClip> listHitSounds = new List<AudioClip>();
 
     [Header("VolumeSounds")]
     [SerializeField] AudioMixer audioMixer;
 
     [Header("Sounds")]
-    [SerializeField] AudioClip deathClip;
-    [SerializeField] AudioClip menuSelectionClip;
-    [SerializeField] AudioClip menuValidaitonClip;
-    [SerializeField] AudioClip jumpingClip;
-    [SerializeField] AudioClip landingClip;
-    [SerializeField] AudioClip btnActivationClip;
-    [SerializeField] AudioClip btnDesctivationClip;
-    [SerializeField] AudioClip cascadeClip;
-    [SerializeField] AudioClip totemActivationClip;
-    [SerializeField] AudioClip doorSoundClip;
-    [SerializeField] AudioClip windSoundClip;
+    [SerializeField] AudioClip winSoundClip;
+    [SerializeField] AudioClip loseSoundClip;
+    [SerializeField] AudioClip takeFlagSoundClip;
+    [SerializeField] AudioClip flagBackSoundClip;
+    [SerializeField] AudioClip handMovementSoundClip;
 
     [Header("WalkClips")]
     [SerializeField] AudioClip walkClip1;
     [SerializeField] AudioClip walkClip2;
     [SerializeField] AudioClip walkClip3;
+    [SerializeField] AudioClip walkClip4;
+    [SerializeField] AudioClip walkClip5;
 
-    [Header("Musics")]
-    [SerializeField] AudioClip menuMusicClip;
-    [SerializeField] AudioClip caveMusicClip;
-    [SerializeField] AudioClip finalMusicClip;
-    [SerializeField] AudioClip joyMusicClip;
-    [SerializeField] AudioClip electricWorldClip;
-    [SerializeField] AudioClip strangeMusicClip;
+    [Header("HitClips")]
+    [SerializeField] AudioClip hitClip1;
+    [SerializeField] AudioClip hitClip2;
+
+    [Header("punchClips")]
+    [SerializeField] AudioClip punchClip1;
+    [SerializeField] AudioClip punchClip2;
+    [SerializeField] AudioClip punchClip3;
+    [SerializeField] AudioClip punchClip4;
+    [SerializeField] AudioClip punchClip5;
 
     [Header("Emmiters")]
     [SerializeField] GameObject emitterPrefab;
@@ -84,7 +67,10 @@ public class SoundManager : MonoBehaviour
 
     private void Awake()
     {
-        _instance = this;
+        if(_instance)
+            Destroy(gameObject);
+        else
+            _instance = this;
     }
 
     // Use this for initialization
@@ -99,7 +85,9 @@ public class SoundManager : MonoBehaviour
             DontDestroyOnLoad(audioObject);
         }
 
-        listWalkSounds = new List<AudioClip>{walkClip1, walkClip2, walkClip3};
+        listWalkSounds = new List<AudioClip> { walkClip1, walkClip2, walkClip3, walkClip4, walkClip5};
+        listPunchSounds = new List<AudioClip> { punchClip1, punchClip2, punchClip3, punchClip4, punchClip5 };
+        listHitSounds = new List<AudioClip> { hitClip1, hitClip2};
     }
 
     private void Update()
@@ -131,57 +119,43 @@ public class SoundManager : MonoBehaviour
         if (emitterAvailable != null)
         {
             emitterAvailable.loop = false;
-            Debug.Log(sound.ToString());
+            int index = 0;
             switch (sound)
             {
                 case SoundList.WALK:
-                    int indexWalk = Random.Range(0, listWalkSounds.Count);
-                    emitterAvailable.clip = listWalkSounds[indexWalk];
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Player")[0];
+                    index = Random.Range(0, listWalkSounds.Count);
+                    emitterAvailable.clip = listWalkSounds[index];
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Walk")[0];
                     break;
-                case SoundList.BUTTON_ACTIVATION:
-                    emitterAvailable.clip = btnActivationClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
+                case SoundList.PUNCH:
+                    index = Random.Range(0, listPunchSounds.Count);
+                    emitterAvailable.clip = listPunchSounds[index];
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Punch")[0];
                     break;
-                case SoundList.BUTTON_DESACTIVATION:
-                    emitterAvailable.clip = btnDesctivationClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
+                case SoundList.IS_HIT:
+                    index = Random.Range(0, listHitSounds.Count);
+                    emitterAvailable.clip = listHitSounds[index];
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Effects")[0];
                     break;
-                case SoundList.CASCADE:
-                    emitterAvailable.clip = cascadeClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
+                case SoundList.HAND_MOVEMENT:
+                    emitterAvailable.clip = handMovementSoundClip;
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Effects")[0];
                     break;
-                case SoundList.DEATH:
-                    emitterAvailable.clip = deathClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Player")[0];
+                case SoundList.FLAG_BACK:
+                    emitterAvailable.clip = flagBackSoundClip;
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("LittleMusics")[0];
                     break;
-                case SoundList.DOOR_SOUND:
-                    emitterAvailable.clip = doorSoundClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
+                case SoundList.TAKE_FLAG:
+                    emitterAvailable.clip = takeFlagSoundClip;
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("LittleMusics")[0];
                     break;
-                case SoundList.JUMPING:
-                    emitterAvailable.clip = jumpingClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Player")[0];
+                case SoundList.WIN_SOUND:
+                    emitterAvailable.clip = winSoundClip;
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("LittleMusics")[0];
                     break;
-                case SoundList.LANDING:
-                    emitterAvailable.clip = landingClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Player")[0];
-                    break;
-                case SoundList.MENU_SELECTION:
-                    emitterAvailable.clip = menuSelectionClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Menu")[0];
-                    break;
-                case SoundList.MENU_VALIDATION:
-                    emitterAvailable.clip = menuValidaitonClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Menu")[0];
-                    break;
-                case SoundList.TOTEM_ACTIVATION:
-                    emitterAvailable.clip = totemActivationClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
-                    break;
-                case SoundList.WIND:
-                    emitterAvailable.clip = windSoundClip;
-                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("Environment")[0];
+                case SoundList.LOSE_SOUND:
+                    emitterAvailable.clip = loseSoundClip;
+                    emitterAvailable.outputAudioMixerGroup = audioMixer.FindMatchingGroups("LittleMusics")[0];
                     break;
             }
 
@@ -204,46 +178,6 @@ public class SoundManager : MonoBehaviour
             Debug.Log("no emitter available");
             return null;
         }        
-    }
-
-    public void PlayMusic(MusicList music)
-    {
-        if (currentMusicPlaying != music)
-        {
-            musicEmitter.loop = true;
-
-            switch (music)
-            {
-                case MusicList.NONE:
-                    musicEmitter.Stop();
-                    break;
-                case MusicList.MENU:
-                    musicEmitter.clip = menuMusicClip;
-                    musicEmitter.Play();
-                    break;
-                case MusicList.STRANGE_MUSIC:
-                    musicEmitter.clip = strangeMusicClip;
-                    musicEmitter.Play();
-                    break;
-                case MusicList.CAVE:
-                    musicEmitter.clip = caveMusicClip;
-                    musicEmitter.Play();
-                    break;
-                case MusicList.ELECTRIC_WORLD:
-                    musicEmitter.clip = electricWorldClip;
-                    musicEmitter.Play();
-                    break;
-                case MusicList.FINAL:
-                    musicEmitter.clip = finalMusicClip;
-                    musicEmitter.Play();
-                    break;
-                case MusicList.JOY:
-                    musicEmitter.clip = joyMusicClip;
-                    musicEmitter.Play();
-                    break;
-            }
-            currentMusicPlaying = music;
-        }
     }
 
     public void StopSound(AudioSource source)

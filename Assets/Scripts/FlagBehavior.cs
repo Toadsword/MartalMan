@@ -4,6 +4,11 @@ using UnityEngine;
 using UnityEngine.Networking;
 using NetworkLobby;
 
+/**
+ * FLAG BEHAVIOR
+ * Script attributed to Flags. They are the main objectives of the players.
+ * To win, a flag must reach the other player's base while keeping their
+ */
 [RequireComponent(typeof(BoxCollider2D))]
 public class FlagBehavior : NetworkBehaviour
 {
@@ -15,6 +20,10 @@ public class FlagBehavior : NetworkBehaviour
     [SerializeField] float gravityScaleFlag = 0.7f;
     [SerializeField] Vector2 offsetWhenTaken = new Vector2(0.0f, 0.8f);
 
+    [Header("Network Update")]
+    [SerializeField] float timeRefreshPosEvery = 0.4f;
+    float timerRefreshNetwork;
+
     [SyncVar] bool isTaken;
     [SyncVar] bool isInBase;
     LocalPlayerController player;
@@ -22,20 +31,26 @@ public class FlagBehavior : NetworkBehaviour
 
     // Use this for initialization
     void Start () {
+        SetupStart();
+    }
+
+    public void SetupStart()
+    {
         isTaken = false;
         isInBase = true;
+        player = null;
         rigid = GetComponent<Rigidbody2D>();
         rigid.bodyType = RigidbodyType2D.Static;
 
         if (!teamBase)
         {
             GameObject initBase = null;
-            if(team == LobbyPlayer.PlayerTeam.RED)
+            if (team == LobbyPlayer.PlayerTeam.RED)
                 initBase = GameObject.FindGameObjectWithTag("RedBase");
             else
                 initBase = GameObject.FindGameObjectWithTag("BlueBase");
 
-            if(!initBase != null)
+            if (!initBase != null)
             {
                 teamBase = initBase.transform.Find("FlagBase");
             }
@@ -45,6 +60,7 @@ public class FlagBehavior : NetworkBehaviour
         {
             transform.position = teamBase.position;
         }
+        timerRefreshNetwork = Utility.StartTimer(timeRefreshPosEvery);
     }
 
     private void Update()
@@ -70,7 +86,11 @@ public class FlagBehavior : NetworkBehaviour
     {
         if (!isTaken && !Mathf.Approximately(rigid.velocity.x, 0.0f) && !Mathf.Approximately(rigid.velocity.y, 0.0f))
         {
-            RpcUpdateNetwork(transform.position, rigid.velocity);
+            if(Utility.IsOver(timerRefreshNetwork))
+            {
+                RpcUpdateNetwork(transform.position, rigid.velocity);
+                timerRefreshNetwork = Utility.StartTimer(timeRefreshPosEvery);
+            }
         }
     }
 
@@ -114,8 +134,7 @@ public class FlagBehavior : NetworkBehaviour
         else if (collision.tag == "RedBase" && team == LobbyPlayer.PlayerTeam.BLUE ||
             collision.tag == "BlueBase" && team == LobbyPlayer.PlayerTeam.RED)
         {
-            Debug.LogError(team + " TEAM WIN !");
-            // ServerManagement._instance.TeamWin(team);
+            ServerManagement._instance.RpcEndGame(team);
         }
     }
 
@@ -144,8 +163,8 @@ public class FlagBehavior : NetworkBehaviour
         if (!player)
             return;
 
+        SoundManager._instance.PlaySound(SoundManager.SoundList.TAKE_FLAG);
         player.flag = this;
-
         isTaken = true;
         isInBase = false;
         ChangeBodyType(false);
@@ -159,6 +178,7 @@ public class FlagBehavior : NetworkBehaviour
         isInBase = true;
         isTaken = false;
 
+        SoundManager._instance.PlaySound(SoundManager.SoundList.FLAG_BACK);
         transform.position = teamBase.position;
         ChangeBodyType(false);
     }

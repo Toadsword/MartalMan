@@ -206,7 +206,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fbfbdba52b25e1418f2b571c79b7c6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncPosRate: 5
   team: 1
   teamBase: {fileID: 0}
   gravityScaleFlag: 0.35
@@ -245,7 +244,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_Sprite: {fileID: 21300016, guid: b7e91e91f5138cf439cf3e354ca24e8f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

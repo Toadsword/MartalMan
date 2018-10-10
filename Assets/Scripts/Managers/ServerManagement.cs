@@ -2,8 +2,77 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using NetworkLobby;
 
+/**
+ * SERVER MANAGEMENT
+ * Script made to deal with global command through the network.
+ * His role : End the game, start a new game and setup all the players in their base position;
+ */
 public class ServerManagement : NetworkBehaviour {
+
+    [Header("EndGameParams")]
+    [SerializeField] float timeBeforeNewGame;
+
+    float timerNewGame;
+    bool isEngGame = false;
+
+    public static ServerManagement _instance;
+
+    private void Awake()
+    {
+        if (_instance)
+            Destroy(gameObject);
+        else
+            _instance = this;
+    }
+
+    private void Start()
+    {
+        isEngGame = false;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!isServer)
+            return;
+
+        if(isEngGame && Utility.IsOver(timerNewGame))
+        {
+            RpcStartNewGame();
+            isEngGame = false;
+        }
+    }
+
+    [ClientRpc]
+    public void RpcEndGame(LobbyPlayer.PlayerTeam teamWon)
+    {
+        // Display on screen of you lost or won
+        GameManager._instance.GameFinished(teamWon);
+
+        //Server
+        isEngGame = true;
+        timerNewGame =  Utility.StartTimer(timeBeforeNewGame);
+    }
+
+    [ClientRpc]
+    public void RpcStartNewGame()
+    {
+        LocalPlayerController[] currentPlayers = GameObject.FindObjectsOfType<LocalPlayerController>();
+
+        foreach(LocalPlayerController player in currentPlayers)
+        {
+            player.SetupStart();
+        }
+
+        FlagBehavior[] currentFlags = GameObject.FindObjectsOfType<FlagBehavior>();
+        foreach (FlagBehavior flag in currentFlags)
+        {
+            flag.SetupStart();
+        }
+    }
+
 
 
     /*** OLD VERSION, NOW USING LOBBYPLAY/LOBBYPLAYERLIST, ETC ***/

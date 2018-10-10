@@ -18,13 +18,9 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] float invincibilityTime = 0.1f;
     float timerInvincibility = 0.0f;
     [SerializeField] float timeToRespawn = 5.0f;
-    float respawnTimer = 0.0f;
-
-    /*
-    [Header("Health")]
-    [SerializeField] int maxHealth = 3;
-    [SerializeField] int currentHealth;
-    */
+    float timerRespawn = 0.0f;
+    [SerializeField] float timeBetweenWalkSound = 0.3f;
+    float timerWalk;
 
     [Header("UI")]
     [SerializeField] private Text nameText;
@@ -36,7 +32,6 @@ public class LocalPlayerController : NetworkBehaviour
     [SerializeField] GameObject propellingObj;
     [SerializeField] float force = 9000.0f;
     [SerializeField] AnimationCurve hammerCurve;
-    [SerializeField] Vector2 hammerSize = new Vector2(0.5f, 0.5f);
     [SerializeField] float timeBeforePropelling = 0.1f;
     float propelTimer = 0.0f;
 
@@ -64,7 +59,7 @@ public class LocalPlayerController : NetworkBehaviour
 
     [HideInInspector] public Rigidbody2D rigid;
     SpriteRenderer sprite;
-    float horizontal, lastHoriDirection, lastRotation;
+    float horizontal;
     bool jump, isHit, grounded;
     public bool isDead;
     Color baseColor = Color.white;
@@ -74,20 +69,25 @@ public class LocalPlayerController : NetworkBehaviour
     // Use this for initialization
     void Start ()
     {
-        lastHoriDirection = 1.0f;
+        SetupStart();
+    }
+    public void SetupStart()
+    {
         hammerState = HammerSteps.IDLE;
         jump = false;
         isHit = false;
-        lastRotation = 0.0f;
-
-        //currentHealth = maxHealth;
 
         rigid = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
         UpdateSpawnPosition();
 
         if (isLocalPlayer)
+        {
             Camera.main.GetComponent<CameraBehavior>().player = gameObject;
+            GameManager._instance.localPlayer = this;
+        }
+
+        flag = null;
 
         OnChangeName(playerName);
         OnChangeTeam(playerTeam);
@@ -101,9 +101,6 @@ public class LocalPlayerController : NetworkBehaviour
 
         //Acceleration
         horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
-
-        if (!Mathf.Approximately(horizontal, 0.0f))
-            lastHoriDirection = horizontal;
 
         if(Mathf.Abs(rigid.velocity.x) > 0.1f)
         {
@@ -129,7 +126,7 @@ public class LocalPlayerController : NetworkBehaviour
             {
                 slamDirection = Vector2.up;
             }
-            else // Right/Left attack, depending on lastHorizontal
+            else // Right/Left attack
             {
                 if (direction.x < 0.0f)
                     slamDirection = Vector2.right;
@@ -168,7 +165,7 @@ public class LocalPlayerController : NetworkBehaviour
 
         if (isDead)
         {
-            if (Utility.IsOver(respawnTimer))
+            if (Utility.IsOver(timerRespawn))
             {
                 if (isServer)
                     RpcRespawn();
@@ -185,7 +182,13 @@ public class LocalPlayerController : NetworkBehaviour
         if (Mathf.Abs(horizontal) > 0.01)
         {
             Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
-            ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true );
+            ApplyForceAcc(rigid.velocity, newSpeed, speedAcc, true);
+
+            if(Utility.IsOver(timerWalk))
+            {
+                timerWalk = Utility.StartTimer(timeBetweenWalkSound);
+                SoundManager._instance.PlaySound(SoundManager.SoundList.WALK);
+            }
         }
 
         if (jump)
@@ -201,6 +204,7 @@ public class LocalPlayerController : NetworkBehaviour
         hammerDirection = slamDirection;
         propelTimer = Utility.StartTimer(timeBeforePropelling);
         hammerState = HammerSteps.GOING;
+        SoundManager._instance.PlaySound(SoundManager.SoundList.HAND_MOVEMENT);
         CmdStartHammering(slamDirection);
     }
 
@@ -340,6 +344,8 @@ public class LocalPlayerController : NetworkBehaviour
         if(Utility.IsOver(timerInvincibility))
         {
             timerInvincibility = Utility.StartTimer(invincibilityTime);
+            SoundManager._instance.PlaySound(SoundManager.SoundList.IS_HIT);
+            SoundManager._instance.PlaySound(SoundManager.SoundList.PUNCH);
             ApplyForce(force);
         }
     }
@@ -417,7 +423,7 @@ public class LocalPlayerController : NetworkBehaviour
     {
         gameObject.layer = LayerMask.NameToLayer("DeadPlayer");
         isDead = true;
-        respawnTimer = Utility.StartTimer(timeToRespawn);
+        timerRespawn = Utility.StartTimer(timeToRespawn);
         UpdateSkin();
         if(flag)
             CmdDropFlag();

@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using NetworkLobby;
 
 public class GameManager : MonoBehaviour {
-    
+
+    public LocalPlayerController localPlayer;
 
     [Header("Public Vars")]    
     public bool gamePaused = false;
@@ -20,7 +22,10 @@ public class GameManager : MonoBehaviour {
 
     private void Awake()
     {
-        _instance = this;
+        if (_instance)
+            Destroy(gameObject);
+        else
+            _instance = this;
     }
 
     // Use this for initialization
@@ -45,9 +50,6 @@ public class GameManager : MonoBehaviour {
                Transform panelMenu = GameObject.Find("MainMenu").transform;
                 if (panelMenu)
                     SetupMenuBtns(panelMenu, true);
-
-                if (SoundManager._instance)
-                    SoundManager._instance.PlayMusic(SoundManager.MusicList.MENU);
                 
                 break;
             case SceneManagement.Scenes.GAME:
@@ -57,22 +59,14 @@ public class GameManager : MonoBehaviour {
                 tempPauseCanvas = GameObject.Find("PauseCanvas");
                 if (tempPauseCanvas)
                     pauseCanvas = tempPauseCanvas;
-
-                if (SoundManager._instance)
-                    SoundManager._instance.PlayMusic(SoundManager.MusicList.CAVE);
                 break;
         } // End switch
     }
-
-    public void SaveCurrentState()
-    {
-        EventManager.SaveCurrentState();
-    }
+    
 
     public void PauseGame(bool doPause = true)
     {
         gamePaused = doPause;
-        EventManager.DoPause();
         SetupMenuBtns(pauseCanvas.transform.GetChild(0), doPause);
     }
 
@@ -173,7 +167,7 @@ public class GameManager : MonoBehaviour {
         panelMenu.gameObject.SetActive(activate);
 
         isInMenu = activate;
-        
+
         selectedIndex = 0;
 
         if (activate)
@@ -185,9 +179,12 @@ public class GameManager : MonoBehaviour {
             menuBtns = null;
     }
 
-    public bool PlayerCanMove()
+    public void GameFinished(LobbyPlayer.PlayerTeam teamLost)
     {
-        return !(isInMenu || gamePaused);
+        if (localPlayer.playerTeam == teamLost)
+            SoundManager._instance.PlaySound(SoundManager.SoundList.LOSE_SOUND);
+        else
+            SoundManager._instance.PlaySound(SoundManager.SoundList.WIN_SOUND);
     }
 
 }

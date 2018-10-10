@@ -14,7 +14,6 @@ namespace NetworkLobby
 
         static public LobbyManager s_Singleton;
 
-
         [Header("Unity UI Lobby")]
         [Tooltip("Time in second between all players ready & match start")]
         public float prematchCountdown = 5.0f;
@@ -116,6 +115,18 @@ namespace NetworkLobby
             }
         }
 
+        public override void OnLobbyClientDisconnect(NetworkConnection conn)
+        {
+            if (conn.lastError != NetworkError.Ok)
+            {
+                if (LogFilter.logError) { Debug.LogError("ClientDisconnected due to error: " + conn.lastError); }
+            }
+
+            Debug.Log("Client disconnected from server: " + conn);
+            //Afficher panel avec timeout
+            DisplayTimeout();
+        }
+
         public void ChangeTo(RectTransform newPanel)
         {
             if (currentPanel != null)
@@ -147,6 +158,12 @@ namespace NetworkLobby
         {
             var _this = this;
             infoPanel.Display("Connecting...", "Cancel", () => { _this.backDelegate(); });
+        }
+
+        public void DisplayTimeout()
+        {
+            var _this = this;
+            infoPanel.Display("Disconnected from server : Timeout", "Cancel", () => { _this.backDelegate(); });
         }
 
         public void SetServerInfo(string status, string host)
@@ -403,7 +420,7 @@ namespace NetworkLobby
                 ChangeTo(lobbyPanel);
                 backDelegate = StopClientClbk;
                 SetServerInfo("Client", networkAddress);
-                //GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
+                GetComponent<LobbyNetworkDiscovery>().StopGlobalBroadcast();
             }
         }
 

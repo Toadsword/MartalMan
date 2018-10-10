@@ -16,6 +16,7 @@ public struct LanConnectionInfo {
         string portText = data.Substring(data.LastIndexOf(":") + 1, data.Length - (data.LastIndexOf(":") + 1));
         port = 7777;
         int.TryParse(portText, out port);
+            
         name = "local";
         currentSize = 0;
         maxSize = 8;

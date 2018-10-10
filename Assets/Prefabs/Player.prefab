@@ -451,6 +451,7 @@ MonoBehaviour:
     m_Bits: 768
   invincibilityTime: 0.7
   timeToRespawn: 5
+  timeBetweenWalkSound: 0.3
   nameText: {fileID: 114206342517023504}
   flag: {fileID: 0}
   propellingObj: {fileID: 1423442908815458}
@@ -479,13 +480,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  hammerSize: {x: 0.5, y: 0.5}
   timeBeforePropelling: 0.1
   playerId: 0
   playerName: '...'
   playerTeam: 0
   playerSkin: 0
   rigid: {fileID: 0}
+  isDead: 0
 --- !u!114 &114645859411124326
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -573,7 +574,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 5
   m_Sprite: {fileID: 21300000, guid: 2d9414f37ee384f46996948b7e88359a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
