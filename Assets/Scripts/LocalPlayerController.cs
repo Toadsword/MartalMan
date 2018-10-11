@@ -42,6 +42,8 @@ public class LocalPlayerController : NetworkBehaviour
     [SyncVar(hook = "OnChangeTeam")] public LobbyPlayer.PlayerTeam playerTeam;
     [SyncVar(hook = "OnChangeSkin")] public SkinManager.SkinType playerSkin;
     public NetworkConnection conn;
+    [SerializeField] int UpdateEachXFrames = 7;
+    int frameSkipped = 0;
 
     enum HammerSteps
     {
@@ -103,12 +105,6 @@ public class LocalPlayerController : NetworkBehaviour
         //Acceleration
         horizontal = GameInput.GetAxisRaw(GameInput.AxisType.HORIZONTAL);
 
-        if(Mathf.Abs(rigid.velocity.x) > 0.1f)
-        {
-            sprite.flipX = rigid.velocity.x < 0.0f;
-            propellingObj.GetComponent<SpriteRenderer>().flipX = rigid.velocity.x < 0.0f;
-        }
-
         //In air
         if (GameInput.GetInputDown(GameInput.InputType.JUMP) && grounded)
         {
@@ -164,6 +160,12 @@ public class LocalPlayerController : NetworkBehaviour
             ApplyForceAcc(rigid.velocity, new Vector2(0.0f, rigid.velocity.y), 0.2f, false);
         }
 
+        if (Mathf.Abs(rigid.velocity.x) > 0.1f)
+        {
+            sprite.flipX = rigid.velocity.x < 0.0f;
+            propellingObj.GetComponent<SpriteRenderer>().flipX = rigid.velocity.x < 0.0f;
+        }
+
         if (isDead)
         {
             if (Utility.IsOver(timerRespawn))
@@ -181,7 +183,16 @@ public class LocalPlayerController : NetworkBehaviour
         if (!isLocalPlayer)
             return;
 
-        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        if(UpdateEachXFrames >= frameSkipped)
+        {
+            UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+            frameSkipped = 0;
+        }
+        else
+        {
+            frameSkipped++;
+        }
+
         if (Mathf.Abs(horizontal) > 0.01)
         {
             Vector2 newSpeed = new Vector2(horizontal * speed * 20, rigid.velocity.y);
@@ -306,7 +317,7 @@ public class LocalPlayerController : NetworkBehaviour
     private void ApplyForceAcc(Vector2 actualValue, Vector2 desiredValue, float divider, bool doNetwork)
     {
         Vector2 force = desiredValue - actualValue;
-        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         ApplyForce(force / divider, doNetwork);
     }
 
@@ -328,7 +339,7 @@ public class LocalPlayerController : NetworkBehaviour
         rigid.velocity = new Vector2(rigid.velocity.x, 0.0f);
 
         //Update pos + vitesse
-        //UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
+        UpdatePlayerNetwork(NetworkUpdtMethod.SYNC_BOTH);
         ApplyForce(direction * rigid.mass * 50 * jumpForce);
     }
     #endregion
@@ -498,7 +509,7 @@ public class LocalPlayerController : NetworkBehaviour
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.transform.tag == "Spike" && isServer && !isDead && Utility.IsOver(timerInvincibility))
         {

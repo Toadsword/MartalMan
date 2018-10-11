@@ -19,10 +19,13 @@ public class FlagBehavior : NetworkBehaviour
     [Header("Physics")]
     [SerializeField] float gravityScaleFlag = 0.7f;
     [SerializeField] Vector2 offsetWhenTaken = new Vector2(0.0f, 0.8f);
+    [SerializeField] float forceWhenEnteringSpike = 300.0f;
 
     [Header("Network Update")]
     [SerializeField] float timeRefreshPosEvery = 0.4f;
     float timerRefreshNetwork;
+    [SerializeField] int UpdateEachXFrames = 50;
+    int frameSkipped = 0;
 
     [SyncVar] bool isTaken;
     [SyncVar] bool isInBase;
@@ -79,7 +82,16 @@ public class FlagBehavior : NetworkBehaviour
         if (!isServer)
             return;
 
-        UpdatePositionNetwork();
+        if (UpdateEachXFrames >= frameSkipped)
+        {
+            UpdatePositionNetwork();
+            frameSkipped = 0;
+        }
+        else
+        {
+            frameSkipped++;
+        }
+
     }
 
     private void UpdatePositionNetwork()
@@ -136,6 +148,29 @@ public class FlagBehavior : NetworkBehaviour
         {
             ServerManagement._instance.RpcEndGame(team);
         }
+        else if(collision.tag == "Spike")
+        {
+            Vector3 angle = collision.transform.rotation.eulerAngles;
+            Vector2 direction = new Vector2();
+
+            if (Mathf.Approximately(angle.z, 0.0f))
+                direction = Vector2.up;
+            else if(Mathf.Approximately(angle.z, 90.0f))
+                direction = Vector2.left;
+            else if (Mathf.Approximately(angle.z, 180.0f))
+                direction = Vector2.down;
+            else if (Mathf.Approximately(angle.z, 270.0f))
+                direction = Vector2.right;
+
+            RpcBounceFlag(direction);
+        }
+    }
+
+    [ClientRpc]
+    private void RpcBounceFlag(Vector2 direction)
+    {
+        rigid.velocity = new Vector2();
+        rigid.AddForce(direction * forceWhenEnteringSpike);
     }
 
     [ClientRpc]

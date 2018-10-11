@@ -173,7 +173,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1178452262387260}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.71217847, y: 1.5293989, z: 0}
+  m_LocalPosition: {x: -17.937918, y: -0.8328154, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4050032755906412}
@@ -214,7 +214,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: -0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -225,7 +225,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.6, y: 0.8}
   m_EdgeRadius: 0
 --- !u!61 &61481186920495990
 BoxCollider2D:
@@ -441,15 +441,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4713d410f02dc94ca802008257f2651, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 9
-  speedAcc: 2
+  speed: 6
+  speedAcc: 1.5
   jumpHeight: 4
   feetPosition: {x: 0, y: -0.6}
   groundSize: {x: 0.9, y: 0.1}
   groundLayer:
     serializedVersion: 2
     m_Bits: 768
-  invincibilityTime: 0.7
+  invincibilityTime: 0
   invulnerabilityTimeRespawn: 1
   timeToRespawn: 5
   timeBetweenWalkSound: 0.3
@@ -486,6 +486,7 @@ MonoBehaviour:
   playerName: '...'
   playerTeam: 0
   playerSkin: 0
+  UpdateEachXFrames: 50
   rigid: {fileID: 0}
   isDead: 0
 --- !u!114 &114645859411124326
